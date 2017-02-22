@@ -39,7 +39,7 @@ extract.date.from.L0.files <- function(file.list) {
   # split file name into pieces using *underscores*
   file.name.string.pieces <- strsplit(file.list,split="_")
   # extract dates from resulting string pieces
-  file.name.dates <- ymd(unlist(file.name.string.pieces))
+  file.name.dates <- ymd(strptime(unlist(file.name.string.pieces),format="%Y-%m-%d")
   # remove NAs
   file.name.dates.woNAs <- file.name.dates[!is.na(file.name.dates)]
   # set warnings to old status

@@ -19,7 +19,7 @@ library(lubridate)
 source("../functions/L1_functions.R")
 
 # Set user variables
-start.date <- ymd("2015-01-01")
+start.date <- ymd("2013-04-01")
 end.date <- ymd("2017-02-01")
 
 path.to.L0.data <- "~/WBB_VAPOR/L0/testing/"
