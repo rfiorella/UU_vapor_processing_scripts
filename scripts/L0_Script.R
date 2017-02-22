@@ -38,8 +38,8 @@ print(paste(Sys.time(),"Loading and compiling L0 functions..."))
 # SET USER OPTIONS
 ######################################################################################################################################
 
-startdate <- "2014-01-01" #expects a number in yyyymmdd format - will begin at MIDNIGHT GMT.
-enddate   <- "2014-02-01" #expects a number in yyyymmdd format - will end at MIDNIGHT GMT.
+startdate <- "2015-10-12" #expects a number in yyyymmdd format - will begin at MIDNIGHT GMT.
+enddate   <- "2016-01-07" #expects a number in yyyymmdd format - will end at MIDNIGHT GMT.
 
 path.to.data <- "~/WBB_VAPOR/Raw/"
 path.to.output.L0.data <- "~/WBB_VAPOR/L0/testing/"
@@ -104,7 +104,7 @@ for (i in 1:ndays) {
   # some days will be missing, so need a function that will cause script to move to the 
   # next day if there are no files corresponding to that day
   if (length(files.within.day)==0) {
-  	print(paste(date(),"  No data for : ",date.to.process, sep=""))
+  	print(paste(Sys.time(),"  No data for : ",date.to.process, sep=""))
   	next
   } # skip to next index if the day is missing...
 
@@ -114,7 +114,7 @@ for (i in 1:ndays) {
   file.inds.to.include <- pad.file.indices(files.within.day,raw.file.list)
 
   # loop through log files for that particular day and concatenate
-  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list)
+  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list,useParallel=FALSE)
 
   # fix time variables for output - 2 fixes need to be made:
   # (1) there are several redundant time variables. remove extra ones.
@@ -140,7 +140,7 @@ for (i in 1:ndays) {
 
   # reduce ambient data.
   amb.data.avgd <- reduce.ambient.data(amb.data)
-
+  
   # WRITE OUT DAILY FILES FOR BOTH AMBIENT DATA, CALIBRATION DATA.
   #-----------------------------------
   # write out ambient data
