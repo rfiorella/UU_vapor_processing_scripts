@@ -1,0 +1,40 @@
+Variable,Value
+instrument.brand,Picarro
+instrument.model,L2130i
+instrument.serialnum,HIDS2045
+collection.lat,40.766
+collection.lon,-111.847
+collection.elev,1440
+collection.height.above.surface,39
+collection.location.datum,WGS1984
+site.name,William B Browning Building; University of Utah
+code.version,v102
+principal.investigator,Gabriel J Bowen; University of Utah; gabe.bowen@utah.edu
+scripts.run.by,Rich Fiorella; University of Utah; rich.fiorella@utah.edu
+time.zone,UTC
+clock.synchronized,NO
+var.yyyy,Year; AD
+var.mm,Month
+var.dd,Day
+var.hh,Hour
+var.mm,Minute
+var.ss,Seconds
+var.EPOCH_TIME,Unix time; number of milliseconds since midnight 1/1/1970
+var.ALARM_STATUS,User-customizable alarm thresholds based on water vapor ppm thresholds
+var.INST_STATUS,Code that states whether the instrument is operating as expected; based on Picarros expectations
+var.CavityPressure,Laser cavity pressure in torr
+var.CavityTemp,Laser cavity temperature in degC
+var.WarmBoxTemp,Temperature at warm box in instrument interior
+var.DasTemp,Temperature sensor in the interior of the analyzer
+var.EtalonTemp,Temperature sensor in the interior of the analyzer
+var.MPVPosition,Multiposition valve position; MPV valve not used at this site
+var.OutletValve,"Relative value of degree of ""openness"" of cavity valve; continuously variable"
+var.ValveMask,Indicates which valves in vaporizer are activated; convert to binary to determine which valves are open
+var.H2O,Humidity; ppmv
+var.Delta_18_16,Ratio of O18 to O16 in per mil notation; uncalibrated
+var.Delta_D_H,Ratio of D to H in per mil notation; uncalibrated
+var.CH4,Methane concentration in ppm
+var.n2_flag,Flag for measurement mode at time of measurement; 1 in N2 mode; 0 in air mode
+var.baseline_shift,change in constant term of fitted baseline relative to empty cavity baseline; see Rev C 04-2015 manual
+var.slope_shift,change in linear term of fitted baseline relative to empty cavity baseline; see Rev C 04-2015 manual
+var.residuals,MRS residual of LS fit of measured spectra versus the expected spectra; see Rev C 04-2015 manual
