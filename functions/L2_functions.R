@@ -223,6 +223,7 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
 
   for (i in 1:length(retained.indices)) {
     if (memory.filter==TRUE) {
+      #print("attempting to filter out for memory effects...")
       
       # ## OLD, NONFUNCTIONAL MEMORY CORRECTION
       # # divide data into ~minute chunks
@@ -376,33 +377,40 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
       temp17[i] <- summary(Hmod)$r.squared
 
     } else { # DO NOT remove any memory issues.
-      temp1[i] <- mean(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)
-      temp2[i] <- mean(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)
-      temp3[i] <- mean(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)
+      if (lengths(good.inds)[i] > 0 & !all(is.na(good.inds[[i]]))) {
+        #print(i) # debug
 
-      temp4[i] <- sd(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)
-      temp5[i] <- sd(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)
-      temp6[i] <- sd(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)
+        #print("Not attempting to correct for memory effects...")
+        temp1[i] <- mean(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)
+        temp2[i] <- mean(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)
+        temp3[i] <- mean(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)
 
-      temp7[i] <- mean(calib.data$EPOCH_TIME[retained.indices[[i]]],na.rm=TRUE)
-      temp8[i] <- min(calib.data$EPOCH_TIME[retained.indices[[i]]],na.rm=TRUE)
-      temp9[i] <- max(calib.data$EPOCH_TIME[retained.indices[[i]]],na.rm=TRUE)
+        temp4[i] <- sd(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)
+        temp5[i] <- sd(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)
+        temp6[i] <- sd(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)
 
-      temp10[i] <- max(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)-min(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)
-      temp11[i] <- max(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)-min(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)
-      temp12[i] <- max(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)-min(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)
+        temp7[i] <- mean(calib.data$EPOCH_TIME[retained.indices[[i]]],na.rm=TRUE)
+        temp8[i] <- min(calib.data$EPOCH_TIME[retained.indices[[i]]],na.rm=TRUE)
+        temp9[i] <- max(calib.data$EPOCH_TIME[retained.indices[[i]]],na.rm=TRUE)
 
-      temp13[i] <- length(retained.indices[[i]])
+        temp10[i] <- max(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)-min(calib.data$H2O[retained.indices[[i]]],na.rm=TRUE)
+        temp11[i] <- max(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)-min(calib.data$Delta_18_16[retained.indices[[i]]],na.rm=TRUE)
+        temp12[i] <- max(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)-min(calib.data$Delta_D_H[retained.indices[[i]]],na.rm=TRUE)
 
-      modtime <- calib.data$EPOCH_TIME[retained.indices[[i]]]-calib.data$EPOCH_TIME[retained.indices[[i]][1]]
-      Omod <- lm(calib.data$Delta_18_16[retained.indices[[i]]] ~ modtime)
-      Hmod <- lm(calib.data$Delta_D_H[retained.indices[[i]]] ~ modtime)
-    
-      temp14[i] <- 60*coef(Omod)[[2]] # convert from permil/s to permil/min
-      temp15[i] <- summary(Omod)$r.squared
+        temp13[i] <- length(retained.indices[[i]])
 
-      temp16[i] <- 60*coef(Hmod)[[2]]
-      temp17[i] <- summary(Hmod)$r.squared
+        modtime <- calib.data$EPOCH_TIME[retained.indices[[i]]]-calib.data$EPOCH_TIME[retained.indices[[i]][1]]
+        Omod <- lm(calib.data$Delta_18_16[retained.indices[[i]]] ~ modtime)
+        Hmod <- lm(calib.data$Delta_D_H[retained.indices[[i]]] ~ modtime)
+      
+        temp14[i] <- 60*coef(Omod)[[2]] # convert from permil/s to permil/min
+        temp15[i] <- summary(Omod)$r.squared
+
+        temp16[i] <- 60*coef(Hmod)[[2]]
+        temp17[i] <- summary(Hmod)$r.squared
+      } else {
+        print("No inds for this period...")
+      } # end check for good inds.
     }
   }
   
@@ -594,14 +602,205 @@ apply.mixingratio.correction.calibration <- function(avg.data.frame) {
 apply.drygas.correction <- function(data,H2O.bg=250) {
   print(paste(now()," Applying dry gas correction to calibration data..."))
   # apply corrections using equation S3 of Gorski et al 2014.
- Delta_18_16_bgc <- (data$Delta_18_16_mrc*data$H2O.mean -
-   data$before.d18O*H2O.bg)/(data$H2O.mean-H2O.bg)
- Delta_D_H_bgc <- (data$Delta_D_H_mrc*data$H2O.mean -
-   data$before.d2H*H2O.bg)/(data$H2O.mean-H2O.bg)
+  Delta_18_16_bgc <- (data$Delta_18_16_mrc*data$H2O.mean -
+    data$before.d18O*H2O.bg)/(data$H2O.mean-H2O.bg)
+  Delta_D_H_bgc <- (data$Delta_D_H_mrc*data$H2O.mean -
+    data$before.d2H*H2O.bg)/(data$H2O.mean-H2O.bg)
+
+  # temporary kludge fix - some of these data points won't have
+  # ambient data available before, but will have data available after.
+  # so, for those rows that returned NA previously, go back
+  # and fill those using ambient data from after the analysis
+  Delta_18_16_bgc[is.na(Delta_18_16_bgc)] <- 
+    (data$Delta_18_16_mrc[is.na(Delta_18_16_bgc)]*data$H2O.mean[is.na(Delta_18_16_bgc)] -
+    data$after.d18O[is.na(Delta_18_16_bgc)]*H2O.bg)/
+    (data$H2O.mean[is.na(Delta_18_16_bgc)]-H2O.bg)
+  Delta_D_H_bgc[is.na(Delta_D_H_bgc)] <- 
+    (data$Delta_D_H_mrc[is.na(Delta_D_H_bgc)]*data$H2O.mean[is.na(Delta_D_H_bgc)] -
+    data$after.d2H[is.na(Delta_D_H_bgc)]*H2O.bg)/
+    (data$H2O.mean[is.na(Delta_D_H_bgc)]-H2O.bg)
+
   # add these columns to the original data frame
- data <- cbind(data,Delta_18_16_bgc)
- data <- cbind(data,Delta_D_H_bgc)
+  data <- cbind(data,Delta_18_16_bgc)
+  data <- cbind(data,Delta_D_H_bgc)
+  
   # return data frame
   return(data)
 }
 
+# testing
+
+assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) {
+  # need to assign standard names and d18O, dD values (VSMOW) based on 
+  # corrected concentrations.
+  # first, break into subsets based on compositions
+
+  std.switch <- as.numeric(as.POSIXct("2013-11-15",tz="GMT",origin="1970-01-01"))
+  
+
+  UD.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean < std.switch)
+  PZ.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean < std.switch)
+  UT.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean > std.switch)
+  FL.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean > std.switch)
+
+  # assign standard name/values
+  PZ.standard <- "PZ"
+  PZ.standard.OValue <- 1.65
+  PZ.standard.DValue <- 16.9
+
+  UD.standard <- "UD"
+  UD.standard.OValue <- -16.52
+  UD.standard.DValue <- -123.1
+
+  UT.standard <- "UT"
+  UT.standard.OValue <- -16.0
+  UT.standard.DValue <- -121.0
+
+  FL.standard <- "FL"
+  FL.standard.OValue <- -1.23
+  FL.standard.DValue <- -5.51
+
+  # fit standard values into the vectors corresponding to proper indices in standard.data.frame
+  add.names <- vector(length=nrow(data))
+  add.std.Oval <- vector(length=nrow(data))
+  add.std.Dval <- vector(length=nrow(data))
+
+  # if data for the standard exists, loop through and assign it to these rows.
+  if (!is.null(UD.stds) & length(UD.stds)>0) {
+    add.names[UD.stds] <- rep(UD.standard,length(UD.stds))
+    add.std.Oval[UD.stds] <- rep(UD.standard.OValue,length(UD.stds))
+    add.std.Dval[UD.stds] <- rep(UD.standard.DValue,length(UD.stds))
+  }
+
+  if (!is.null(PZ.stds) & length(PZ.stds)>0) {
+    add.names[PZ.stds] <- rep(PZ.standard,length(PZ.stds))
+    add.std.Oval[PZ.stds] <- rep(PZ.standard.OValue,length(PZ.stds))
+    add.std.Dval[PZ.stds] <- rep(PZ.standard.DValue,length(PZ.stds))
+  }
+
+  if (!is.null(UT.stds) & length(UT.stds)>0) {
+    add.names[UT.stds] <- rep(UT.standard,length(UT.stds))
+    add.std.Oval[UT.stds] <- rep(UT.standard.OValue,length(UT.stds))
+    add.std.Dval[UT.stds] <- rep(UT.standard.DValue,length(UT.stds))
+  }
+
+  if (!is.null(FL.stds) & length(FL.stds)>0) {
+    add.names[FL.stds] <- rep(FL.standard,length(FL.stds))
+    add.std.Oval[FL.stds] <- rep(FL.standard.OValue,length(FL.stds))
+    add.std.Dval[FL.stds] <- rep(FL.standard.DValue,length(FL.stds))
+  }
+
+  # add columns to standard.data.frame
+  data <- cbind(data,add.names,add.std.Oval,add.std.Dval)
+
+  # rename column headers to something more useful
+  names(data)[names(data) == 'add.names'] <- 'standard.name'
+  names(data)[names(data) == 'add.std.Oval'] <- 'standard.O18.VSMOW'
+  names(data)[names(data) == 'add.std.Dval'] <- 'standard.H2.VSMOW'
+
+  # return standard.data.frame
+  return(data)
+}
+
+#-----------------------------------------------------------------------------------
+# correct.standards.to.VSMOW function
+
+correct.standards.to.VSMOW <- function(standard.data.frame,method=1) {
+  print(paste(now()," Converting calibration data to VSMOW..."))
+
+  # methods for calibrating:
+  # 1 - bracket each ambient period with the standard measurements immediately
+  #     before and after ambient period. equally weighted. (not implemented)
+
+  if (method==1) {
+    # ensure that we're working with a data frame...
+    stopifnot(is.data.frame(standard.data.frame))
+
+    # find the number of calibration periods in the data frame.
+    #----------------------------------------------------------
+    # however, cannot simply treat these as distinct periods as
+    # the same standard could be analyzed multiple times sequentially
+    # either by choice (e.g., as in a concentration calibration)
+    # or by error (e.g., one of the SDM needles develops a clog, and is 
+    # not immediately noticed and replaced or is otherwise inaccesible)
+    # really - want to do something called run length encoding (rle)
+    std.names <- as.vector(standard.data.frame$standard.name) # rle requires atomic vector
+   
+    # check to see if there are any NA values that might interfere with
+    # calibrations...
+    if (any(is.na(std.names))) { 
+      print("There are NAs in assigned standards...check this output very carefully!!!!")
+    }
+
+    # run rle - rle gives a list with two outputs: (a) the length of each run and
+    # (b) the standard associated with each run (values list).
+    std.periods <- rle(std.names) 
+
+    # ok, what we want now is to define individual calibration periods.
+    # a calibration period requires there to be measurements of 2 different
+    # standards. %/%2 operator requires 2 standards at each period, the -1
+    # accounts for the fact we're interested in the periods bracketing 
+    # a certain portion of time.
+    nperiods <- length(std.periods$lengths)%/% 2 - 1
+
+    # assign each index of std.periods$lengths to a bracket -
+    # bracket i will refer to the beginning of period i, bracket i+1
+    # will refer to the end of period i
+    # (indexing here a little funky, but starts at 2 so that first two
+    # elements of brackets both return 1)
+    brackets <- (seq(2,length(std.periods$lengths)+1))%/%2 
+
+    # initiate output vectors
+    period.begin <- vector("numeric",nperiods)
+    period.end   <- vector("numeric",nperiods)
+    period.Oslope <- vector("numeric",nperiods)
+    period.Ointercept <- vector("numeric",nperiods)
+    period.Orsq <- vector("numeric",nperiods)
+    period.Hslope <- vector("numeric",nperiods)
+    period.Hintercept <- vector("numeric",nperiods)
+    period.Hrsq <- vector("numeric",nperiods)
+
+    # loop through the periods and estimate the slope.
+    for (i in 1:nperiods) {
+      # create an vector the length of std.periods$lengths that matches
+      # i to the calibration period.
+
+      bracket.i.lims <- c(min(which(brackets==i)),max(which(brackets==i)))
+      bracket.iplus1.lims <- c(min(which(brackets==(i+1))),max(which(brackets==(i+1))))
+
+      # find the indices for the beginning portion of the bracket.
+      start.i <- ifelse(i==1,1,sum(std.periods$lengths[1:(bracket.i.lims[1]-1)])+1)
+      stop.i <- sum(std.periods$lengths[1:bracket.i.lims[2]])
+
+      # find the indices for the end portion of the brakcet.
+      start.iplus1 <- stop.i + 1
+      stop.iplus1 <- sum(std.periods$lengths[1:bracket.iplus1.lims[2]])
+
+      # calculate mean times for start and end of period
+      period.begin[i] <- mean(standard.data.frame$time.mean[start.i:stop.i])
+      period.end[i]   <- mean(standard.data.frame$time.mean[start.iplus1:stop.iplus1])
+
+      # fit model for O slope
+      Omod <- lm(standard.O18.VSMOW ~ Delta_18_16_bgc,data=standard.data.frame[start.i:stop.iplus1,])
+      # extract O slope, intercept, and rsquared
+      period.Oslope[i] <- coef(Omod)[[2]]
+      period.Ointercept[i] <- coef(Omod)[[1]]
+      period.Orsq[i] <- summary(Omod)$r.squared
+
+      # fit model for H slope
+      Hmod <- lm(standard.H2.VSMOW ~ Delta_D_H_bgc,data=standard.data.frame[start.i:stop.iplus1,])
+      # extract O slope, intercept, and rsquared
+      period.Hslope[i] <- coef(Hmod)[[2]]
+      period.Hintercept[i] <- coef(Hmod)[[1]]
+      period.Hrsq[i] <- summary(Hmod)$r.squared
+    }
+   
+    # create dataframe packaging this info out to return
+    output <- data.frame("start.time"=period.begin,"stop.time"=period.end,
+      "O.slope"=period.Oslope,"O.intercept"=period.Ointercept,"O.r2"=period.Orsq,
+      "H.slope"=period.Hslope,"H.intercept"=period.Hintercept,"H.r2"=period.Hrsq)
+
+    # return the variables.
+    return(output)
+  }
+}

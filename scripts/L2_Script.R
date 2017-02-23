@@ -22,8 +22,8 @@ library(RColorBrewer)
 # Set user variables
 #--------------------------------------------------------------------------
 # set initial and final dates for processing.
-start.date <- ymd("2013-05-01")
-end.date <- ymd("2013-06-01")
+start.date <- ymd("2014-10-01")
+end.date <- ymd("2016-01-01")
 
 # where is the input data and where should we write the output data?
 path.to.L1.data <- "~/WBB_VAPOR/L1/testing/"
@@ -196,7 +196,7 @@ for (i in 1:nmonths) {
 
 
 	# based on the good points identified, calculate averages for each plateau
-	calib.avgs[[i]] <- calculate.standard.averages(calib.data,good.inds)
+	calib.avgs[[i]] <- calculate.standard.averages(calib.data,good.inds,memory.filter=FALSE)
 
     # attach nearby ambient data to calibration data frame.
     #-------------------------------------------------------
@@ -230,131 +230,131 @@ for (i in 1:nmonths) {
 
     ambient.buffers[[i]] <-  get.ambient.deltas(calib.avgs[[i]],amb.data)
 
-    #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    # DIAGNOSTIC PLOT 3: plot the points selected by the spline thresholds 
-    # for each peak. raw data are shown as points, splines are shown as lines.
+    # #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # # DIAGNOSTIC PLOT 3: plot the points selected by the spline thresholds 
+    # # for each peak. raw data are shown as points, splines are shown as lines.
 
-    if (RUN_PLOTS) {
-        # plot the data after identifying plateaus using splines
-        pdf(paste("diag_plots/spline_selected_points_",time.suffix,".pdf",
-            collapse="",sep=""),width=11,height=8)
-        par(mfrow=c(3,1),mar=c(4,4,1,1),oma=c(0,0,3,0))
-        mycols <- rainbow(8)
-        if (length(calib.avgs) > 0) { # i : months
-            if (!is.null(calib.avgs[[i]]) == TRUE & length(calib.avgs[[i]]) > 0) {
-                # start separate counter
-                j <- 1
-                z <- 1
-                for (k in 1:length(spline.fits)) { # k loops through spline.fits in month i
-                    # problem with straightaway plotting this: length of spline.fits[[k]] and good.inds[[k]]
-                    # is NOT the same if points are removed through the filter.
-                    # keep a separate counter for good.inds rather than spline fits.
+    # if (RUN_PLOTS) {
+    #     # plot the data after identifying plateaus using splines
+    #     pdf(paste("diag_plots/spline_selected_points_",time.suffix,".pdf",
+    #         collapse="",sep=""),width=11,height=8)
+    #     par(mfrow=c(3,1),mar=c(4,4,1,1),oma=c(0,0,3,0))
+    #     mycols <- rainbow(8)
+    #     if (length(calib.avgs) > 0) { # i : months
+    #         if (!is.null(calib.avgs[[i]]) == TRUE & length(calib.avgs[[i]]) > 0) {
+    #             # start separate counter
+    #             j <- 1
+    #             z <- 1
+    #             for (k in 1:length(spline.fits)) { # k loops through spline.fits in month i
+    #                 # problem with straightaway plotting this: length of spline.fits[[k]] and good.inds[[k]]
+    #                 # is NOT the same if points are removed through the filter.
+    #                 # keep a separate counter for good.inds rather than spline fits.
                    
-                    # want to line up all of the data with the proper times - there are three different
-                    # lists that have different lengths and therefore different time variables
-                    # this is a bit of an obnoxious task. there are three possible outcomes here: 
-                    # 1) no points in the spline fit passed the derivatives based test 
-                    # identifying a stable point, and no data is returned (e.g., spline.has.data = FALSE)
-                    # 2) points returned in spline fit, but does not pass filter in averaging
-                    # (e.g., spline.has.data = TRUE but spline.has.good.data = FALSE)
-                    # 3) points returned in spline fit, and does pass filter in averaging
-                    # (e.g., spline.has.data = TRUE and spline.has.good.data = TRUE)
+    #                 # want to line up all of the data with the proper times - there are three different
+    #                 # lists that have different lengths and therefore different time variables
+    #                 # this is a bit of an obnoxious task. there are three possible outcomes here: 
+    #                 # 1) no points in the spline fit passed the derivatives based test 
+    #                 # identifying a stable point, and no data is returned (e.g., spline.has.data = FALSE)
+    #                 # 2) points returned in spline fit, but does not pass filter in averaging
+    #                 # (e.g., spline.has.data = TRUE but spline.has.good.data = FALSE)
+    #                 # 3) points returned in spline fit, and does pass filter in averaging
+    #                 # (e.g., spline.has.data = TRUE and spline.has.good.data = TRUE)
 
-                    # four different indices sprinkled through here: i refers to the month,
-                    # k refers to the peak in spline fits, z refers to the peak with good
-                    # inds returned, and j refers to the peaks with good inds that pass the filter.
-                    # in general, the maximums of these indices should follow this rule: k >= z >= j.
+    #                 # four different indices sprinkled through here: i refers to the month,
+    #                 # k refers to the peak in spline fits, z refers to the peak with good
+    #                 # inds returned, and j refers to the peaks with good inds that pass the filter.
+    #                 # in general, the maximums of these indices should follow this rule: k >= z >= j.
 
-                    tmpmin <- min(spline.fits[[k]]$time)
-                    tmpmax <- max(spline.fits[[k]]$time)
-                    gimean <- mean(calib.data$EPOCH_TIME[good.inds[[z]]],na.rm=TRUE)
-                    camean <- calib.avgs[[i]]$time.mean[j]
+    #                 tmpmin <- min(spline.fits[[k]]$time)
+    #                 tmpmax <- max(spline.fits[[k]]$time)
+    #                 gimean <- mean(calib.data$EPOCH_TIME[good.inds[[z]]],na.rm=TRUE)
+    #                 camean <- calib.avgs[[i]]$time.mean[j]
 
-                    # print(paste(j,z,k))
-                    # print(paste(tmpmin,tmpmax,calib.avgs[[i]]$time.mean[j]))
-                    # print(paste(tmpmin,tmpmax,gimean))
+    #                 # print(paste(j,z,k))
+    #                 # print(paste(tmpmin,tmpmax,calib.avgs[[i]]$time.mean[j]))
+    #                 # print(paste(tmpmin,tmpmax,gimean))
 
-                    # first test: was a peak found?
-                    if (gimean < tmpmax & gimean >= tmpmin) {
-                        # yes, a peak was found.
-                        spline.has.data <- "TRUE"
-                        # second test: did any data make it through the filter
-                        if (camean < tmpmax & camean >= tmpmin) { # yes, data made it through filter
-                            spline.has.good.data <- "TRUE"
-                        } else { # no, data did not make it through filter.
-                            spline.has.good.data <- "FALSE"
-                        }
-                    } else { # no peak was found.
-                        spline.has.data <- "FALSE"
-                        spline.has.good.data <- "FALSE"
-                    }
+    #                 # first test: was a peak found?
+    #                 if (gimean < tmpmax & gimean >= tmpmin) {
+    #                     # yes, a peak was found.
+    #                     spline.has.data <- "TRUE"
+    #                     # second test: did any data make it through the filter
+    #                     if (camean < tmpmax & camean >= tmpmin) { # yes, data made it through filter
+    #                         spline.has.good.data <- "TRUE"
+    #                     } else { # no, data did not make it through filter.
+    #                         spline.has.good.data <- "FALSE"
+    #                     }
+    #                 } else { # no peak was found.
+    #                     spline.has.data <- "FALSE"
+    #                     spline.has.good.data <- "FALSE"
+    #                 }
                         
-                    # print(paste(j,z,k,length(calib.avgs[[i]]$time.mean),length(good.inds),
-                    #       length(spline.fits),spline.has.data,spline.has.good.data))
+    #                 # print(paste(j,z,k,length(calib.avgs[[i]]$time.mean),length(good.inds),
+    #                 #       length(spline.fits),spline.has.data,spline.has.good.data))
 
-                    # finally make plots.
-                    if (spline.has.data==TRUE & spline.has.good.data==TRUE) {
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O,
-                            ylim=c(min(c(min(spline.fits[[k]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$H2O[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                         mtext(paste("Mean: ",round(calib.avgs[[i]]$H2O.mean[j],2),
-                             " stdev: ",round(calib.avgs[[i]]$H2O.sd[j],2)),side=1,line=-2)
+    #                 # finally make plots.
+    #                 if (spline.has.data==TRUE & spline.has.good.data==TRUE) {
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O,
+    #                         ylim=c(min(c(min(spline.fits[[k]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[z]]],na.rm=TRUE))),
+    #                         max(c(max(spline.fits[[k]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[z]]],na.rm=TRUE)))))
+    #                     points(calib.data$EPOCH_TIME[good.inds[[z]]],
+    #                         calib.data$H2O[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+    #                      mtext(paste("Mean: ",round(calib.avgs[[i]]$H2O.mean[j],2),
+    #                          " stdev: ",round(calib.avgs[[i]]$H2O.sd[j],2)),side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O,
-                            ylim=c(min(c(min(spline.fits[[k]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_18_16[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                        mtext(paste("Mean: ",round(calib.avgs[[i]]$d18O.mean[j],2)," stdev: ",round(calib.avgs[[i]]$d18O.sd[j],2)),side=1,line=-2)
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O,
+    #                         ylim=c(min(c(min(spline.fits[[k]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE))),
+    #                         max(c(max(spline.fits[[k]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE)))))
+    #                     points(calib.data$EPOCH_TIME[good.inds[[z]]],
+    #                         calib.data$Delta_18_16[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+    #                     mtext(paste("Mean: ",round(calib.avgs[[i]]$d18O.mean[j],2)," stdev: ",round(calib.avgs[[i]]$d18O.sd[j],2)),side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H,
-                            ylim=c(min(c(min(spline.fits[[k]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_D_H[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                        mtext(paste("Mean: ",round(calib.avgs[[i]]$d2H.mean[j],2)," stdev: ",round(calib.avgs[[i]]$d2H.sd[j],2)),side=1,line=-2)
-                    } else if (spline.has.data==TRUE & spline.has.good.data==FALSE) { # spline has data, but fails filter tests.
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O,
-                            ylim=c(min(c(min(spline.fits[[k]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$H2O[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                         mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H,
+    #                         ylim=c(min(c(min(spline.fits[[k]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE))),
+    #                         max(c(max(spline.fits[[k]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE)))))
+    #                     points(calib.data$EPOCH_TIME[good.inds[[z]]],
+    #                         calib.data$Delta_D_H[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+    #                     mtext(paste("Mean: ",round(calib.avgs[[i]]$d2H.mean[j],2)," stdev: ",round(calib.avgs[[i]]$d2H.sd[j],2)),side=1,line=-2)
+    #                 } else if (spline.has.data==TRUE & spline.has.good.data==FALSE) { # spline has data, but fails filter tests.
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O,
+    #                         ylim=c(min(c(min(spline.fits[[k]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[z]]],na.rm=TRUE))),
+    #                         max(c(max(spline.fits[[k]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[z]]],na.rm=TRUE)))))
+    #                     points(calib.data$EPOCH_TIME[good.inds[[z]]],
+    #                         calib.data$H2O[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+    #                      mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O,
-                            ylim=c(min(c(min(spline.fits[[k]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_18_16[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                        mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O,
+    #                         ylim=c(min(c(min(spline.fits[[k]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE))),
+    #                         max(c(max(spline.fits[[k]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE)))))
+    #                     points(calib.data$EPOCH_TIME[good.inds[[z]]],
+    #                         calib.data$Delta_18_16[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+    #                     mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H,
-                            ylim=c(min(c(min(spline.fits[[k]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_D_H[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                        mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
-                    } else { # if spline returns no good data!
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O)
-                        mtext("No acceptable peak found!",side=1,line=-2)
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H,
+    #                         ylim=c(min(c(min(spline.fits[[k]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE))),
+    #                         max(c(max(spline.fits[[k]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE)))))
+    #                     points(calib.data$EPOCH_TIME[good.inds[[z]]],
+    #                         calib.data$Delta_D_H[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+    #                     mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
+    #                 } else { # if spline returns no good data!
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O)
+    #                     mtext("No acceptable peak found!",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O)
-                        mtext("No acceptable peak found!",side=1,line=-2)
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O)
+    #                     mtext("No acceptable peak found!",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H)
-                        mtext("No acceptable peak found!",side=1,line=-2)
-                    }
-                        title(paste("Spline selected points for : ",time.suffix),outer=TRUE)
-                # increment z and j as necessary
-                if (spline.has.data==TRUE) {z <- min(c(z+1,length(good.inds)))}
-                if (spline.has.good.data==TRUE) {j <- min(c(j+1,nrow(calib.avgs[[i]])))}
-                }
-                dev.off()
-            } else { print("skipping plot because data frame is empty...")}
-        }
-    }
+    #                     plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H)
+    #                     mtext("No acceptable peak found!",side=1,line=-2)
+    #                 }
+    #                     title(paste("Spline selected points for : ",time.suffix),outer=TRUE)
+    #             # increment z and j as necessary
+    #             if (spline.has.data==TRUE) {z <- min(c(z+1,length(good.inds)))}
+    #             if (spline.has.good.data==TRUE) {j <- min(c(j+1,nrow(calib.avgs[[i]])))}
+    #             }
+    #             dev.off()
+    #         } else { print("skipping plot because data frame is empty...")}
+    #     }
+    # }
 
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # DIAGNOSTIC PLOT 4: plots mean/sd values for H2O, delta18O, and delta2H 
@@ -449,14 +449,52 @@ calib.averages.all <- do.call(rbind,calib.avgs)
 ambient.bracket.all <- do.call(rbind,ambient.buffers)
 
 # attach ambient data columns to the calibration period averages data frame
-calib.averages.all2 <- cbind(calib.averages.all,ambient.bracket.all)
+calib.averages.wamb <- cbind(calib.averages.all,ambient.bracket.all)
 
 # correct for delta dependence on concentration
-calib.averages.all3 <- apply.mixingratio.correction.calibration(calib.averages.all2)
+calib.averages.wamb.mrc <- apply.mixingratio.correction.calibration(calib.averages.wamb)
 
 # correct standard values for vapor bleeding through drierite canister...
-calib.averages.all4 <- apply.drygas.correction(calib.averages.all3)
+calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc)
+
+# assign standard names to each calibration period
+calib.averages.wamb.mrc.bgc.wstds <- assign.standard.names.and.values(calib.averages.wamb.mrc.bgc)
+
+# quartz()
+# plot(calib.averages.all4$H2O.mean,calib.averages.all4$d18O.mean)
+# points(calib.averages.all4$H2O.mean,calib.averages.all4$Delta_18_16_bgc,col="red")
+
+# calculate the correction slopes/intercepts.
+calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds)
+
+#------------------------------------------------------------------------
+# Write out calibration parameters into a data file.
+
+print(paste("Saving calibration data in two separate files"))
+print(paste("The first - save all the information about each identified calibration data point..."))
+
+calib.dt.name <- paste(path.to.output.L2.data,"WBB_Water_Vapor_CalibrationAverages_L2_",
+    start.date,"_",end.date,".dat",sep="")
+
+# write out data table of calib.averages.wamb.mrc.bgc.wstds
+write.table(calib.averages.wamb.mrc.bgc.wstds,file=calib.dt.name,
+    sep=",",row.names=FALSE)
+
+# ok, now write out the data file that contains the regression parameters...
+print(paste("The second - save the regression parameters for each period..."))
+
+regress.dt.name <- paste(path.to.output.L2.data,"WBB_Water_Vapor_CalibrationRegressionData_L2_",
+    start.date,"_",end.date,".dat",sep="")
+
+write.table(calibration.regressions,file=regress.dt.name,sep=",",row.names=FALSE)
+
+# make a couple quick diagnostic plots of regression parameters
+quartz()
+par(mfrow=c(2,1))
+plot(calibration.regressions$start.time,calibration.regressions$O.slope)
+plot(calibration.regressions$start.time,calibration.regressions$O.intercept,col="red")
 
 quartz()
-plot(calib.averages.all4$H2O.mean,calib.averages.all4$d18O.mean)
-points(calib.averages.all4$H2O.mean,calib.averages.all4$Delta_18_16_bgc,col="red")
+par(mfrow=c(2,1))
+plot(calibration.regressions$start.time,calibration.regressions$H.slope)
+plot(calibration.regressions$start.time,calibration.regressions$H.intercept,col="green")
