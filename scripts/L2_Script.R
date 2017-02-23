@@ -454,3 +454,9 @@ calib.averages.all2 <- cbind(calib.averages.all,ambient.bracket.all)
 # correct for delta dependence on concentration
 calib.averages.all3 <- apply.mixingratio.correction.calibration(calib.averages.all2)
 
+# correct standard values for vapor bleeding through drierite canister...
+calib.averages.all4 <- apply.drygas.correction(calib.averages.all3)
+
+quartz()
+plot(calib.averages.all4$H2O.mean,calib.averages.all4$d18O.mean)
+points(calib.averages.all4$H2O.mean,calib.averages.all4$Delta_18_16_bgc,col="red")

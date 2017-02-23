@@ -587,3 +587,21 @@ apply.mixingratio.correction.calibration <- function(avg.data.frame) {
   # return the whole data frame with the two mixing ratio corrected variables attached.
   return(avg.data.frame)
 }
+
+#-----------------------------------------------------------------------------------
+# apply.drygas.correction function - corrected now that ambient data is already in data frame.
+
+apply.drygas.correction <- function(data,H2O.bg=250) {
+  print(paste(now()," Applying dry gas correction to calibration data..."))
+  # apply corrections using equation S3 of Gorski et al 2014.
+ Delta_18_16_bgc <- (data$Delta_18_16_mrc*data$H2O.mean -
+   data$before.d18O*H2O.bg)/(data$H2O.mean-H2O.bg)
+ Delta_D_H_bgc <- (data$Delta_D_H_mrc*data$H2O.mean -
+   data$before.d2H*H2O.bg)/(data$H2O.mean-H2O.bg)
+  # add these columns to the original data frame
+ data <- cbind(data,Delta_18_16_bgc)
+ data <- cbind(data,Delta_D_H_bgc)
+  # return data frame
+  return(data)
+}
+
