@@ -23,7 +23,7 @@ library(RColorBrewer)
 #--------------------------------------------------------------------------
 # set initial and final dates for processing.
 start.date <- ymd("2013-05-01")
-end.date <- ymd("2014-06-01")
+end.date <- ymd("2013-06-01")
 
 # where is the input data and where should we write the output data?
 path.to.L1.data <- "~/WBB_VAPOR/L1/testing/"
@@ -451,33 +451,6 @@ ambient.bracket.all <- do.call(rbind,ambient.buffers)
 # attach ambient data columns to the calibration period averages data frame
 calib.averages.all2 <- cbind(calib.averages.all,ambient.bracket.all)
 
-# clean up some of the averages - remove values with:
-# low mean H2O, high sd H2O, d18O, and d2H
+# correct for delta dependence on concentration
+calib.averages.all3 <- apply.mixingratio.correction.calibration(calib.averages.all2)
 
-# h2o.min <- which(calib.averages.all$H2O.mean > 2000) # must be 2000 ppm
-# h2o.max <- which(calib.averages.all$H2O.mean < 25000)
-# h2o.lsd <- which(calib.averages.all$H2O.sd < 1000)
-# d18O.lsd <- which(calib.averages.all$d18O.sd < 0.5)
-# d2H.lsd <- which(calib.averages.all$d2H.sd < 4)
-
-# common.inds <- Reduce(intersect,list(h2o.min,h2o.max,h2o.lsd,d18O.lsd,d2H.lsd))
-
-# #print(common.inds)
-
-# quartz()
-# par(mfrow=c(3,2))
-# plot(calib.averages.all$time.mean,calib.averages.all$H2O.mean)
-# plot(calib.averages.all$time.mean,calib.averages.all$H2O.sd)
-# plot(calib.averages.all$time.mean,calib.averages.all$d18O.mean)
-# plot(calib.averages.all$time.mean,calib.averages.all$d18O.sd)
-# plot(calib.averages.all$time.mean,calib.averages.all$d2H.mean)
-# plot(calib.averages.all$time.mean,calib.averages.all$d2H.sd)
-
-# quartz()
-# par(mfrow=c(3,1))
-# plot(calib.averages.all$time.mean[common.inds],
-#     calib.averages.all$H2O.mean[common.inds])
-# plot(calib.averages.all$time.mean[common.inds],
-#     calib.averages.all$d18O.mean[common.inds])
-# plot(calib.averages.all$time.mean[common.inds],
-#     calib.averages.all$d2H.mean[common.inds])

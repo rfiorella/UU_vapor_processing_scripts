@@ -546,3 +546,44 @@ get.ambient.deltas <- function(calib.averages,ambient.data) {
   # return output frame
   return(output)
 }
+
+#-----------------------------------------------------------------------------------
+# apply.mixingratio.correction - this function corrects the measured isotopic compositions
+# using a linear regression between delta and 1/[H2O] - based on coefficients determined from
+# CalibrationStudyRegressionHandClean_gjb. Requires mixing ratio coefficients to be specified 
+# in L1_Calibration_Parameters.R. Other regressions are possible for correcting for
+# concentration dependence, but have not be implemented in this code base yet.
+
+apply.mixingratio.correction.calibration <- function(avg.data.frame) {
+  print(paste(now()," Applying mixing ratio correction to: ",deparse(substitute(avg.data.frame))))
+  # this function assumes that it is receiving a data frame that has named variables
+  # H2O, Delta_18_16, Delta_D_H
+  O_slope <- 1e-10
+  O_intercept <- 1e-10
+
+  D_slope <- 1e-10
+  D_intercept <- 1e-10
+
+  # check to see if necessary variables are included in the input data frame - force script to stop if 
+  # variable is not in input!
+  # if (!"Delta_18_16.mean" %in% colnames(avg.data.frame)) {
+  #   stop("Delta_18_16.mean variable not in input data frame!")
+  # }
+  # if (!"Delta_D_H.mean" %in% colnames(avg.data.frame)) {
+  #   stop("Delta_D_H.mean variable not in input data frame!")
+  # }
+  # if (!"H2O.mean" %in% colnames(avg.data.frame)) {
+  #   stop("H2O.mean variable not in input data frame!")
+  # }
+
+  # apply mixing ratio corrections - this takes coeffiecients specified in L1_Calibration_Parameters.R
+  Delta_18_16_mrc <- avg.data.frame$d18O.mean - O_slope/avg.data.frame$H2O.mean + O_intercept
+  Delta_D_H_mrc <- avg.data.frame$d2H.mean - D_slope/avg.data.frame$H2O.mean + D_intercept
+
+  # attach new mrc variables to original data frame.
+  avg.data.frame <- cbind(avg.data.frame,Delta_18_16_mrc)
+  avg.data.frame <- cbind(avg.data.frame,Delta_D_H_mrc)
+
+  # return the whole data frame with the two mixing ratio corrected variables attached.
+  return(avg.data.frame)
+}
