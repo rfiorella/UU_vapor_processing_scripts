@@ -19,8 +19,8 @@ library(lubridate)
 source("../functions/L1_functions.R")
 
 # Set user variables
-start.date <- ymd("2013-04-01")
-end.date <- ymd("2017-02-01")
+start.date <- ymd("2014-06-01")
+end.date <- ymd("2014-07-01")
 
 path.to.L0.data <- "~/WBB_VAPOR/L0/testing/"
 path.to.output.L1.data <-  "~/WBB_VAPOR/L1/testing/"
@@ -184,7 +184,7 @@ for (i in 1:nmonths) {
 	gc()
 
 	# NOTE: $data required here since output of qflag is a list!
-	mondata.filtered <- data.sanity.check(mondata.qflag$data) 
+	mondata.qccheck <- data.sanity.check(mondata.qflag$data) 
 
 	# get data row for log file - 
 	log.yyyy[i] <- year(start.date %m+% months(i-1))
@@ -192,16 +192,40 @@ for (i in 1:nmonths) {
 	# small bug here to fix at some point - the reference points for these are different,
 	# so ultimately, this value can exceed 100% in rare cases when all of the data fails
 	# one check or the other.
-	log.pct[i] <- mondata.filtered$pct.discarded + mondata.qflag$pct.discarded
+	log.pct[i] <- mondata.qccheck$pct.discarded + mondata.qccheck$pct.discarded
+
+	# ambient data needs a bit more filtering here - namely, after a calibration period
+	# there are often apparent discontinuities in the data that are problematic...
+
+	post.calibration.filter <- function(qcchecked.data.frame) {
+		# calculate some derivatives, though might not use all of them...
+		time.diff <- diff(qcchecked.data.frame$EPOCH_TIME)
+		h2o.diff <- diff(qcchecked.data.frame$H2O)
+		d18O.diff <- diff(qcchecked.data.frame$Delta_18_16)
+		d2H.diff <- diff(qcchecked.data.frame$Delta_D_H)
+
+		# apply a filter. removing where |h2o.diff| > 1000
+		# seems to be a good first start.
+		filter.pass.inds <- which(abs(h2o.diff)<1000) + 1 # add 1 due to how diff works!!!
+
+		# omit these rows and return the data frame...
+		output <- qcchecked.data.frame[filter.pass.inds,]
+
+		# return the output
+		return(output)
+	}
+
+	mondata.pcfilter <- post.calibration.filter(mondata.qccheck$data)
 
 	# clean up memory and gc
 	rm(mondata.qflag)
+	rm(mondata.qccheck)
 	gc()
 
  	# Write ambient data file.
  	##########################################################################
 
- 	if (nrow(mondata.filtered$data) > 0) {
+ 	if (nrow(mondata.pcfilter) > 0) {
  		print(paste(now()," Writing out ambient data frame..."))
  		# generate output filename
  		coutput.fname <- paste(path.to.output.L1.data,"WBB_Water_Vapor_AmbientData_L1_",
@@ -211,17 +235,19 @@ for (i in 1:nmonths) {
  		attach.L0.Header(coutput.fname,metadata.frame)
 
  		# write out data portion of the data file.
- 		write.table(mondata.filtered$data,file=coutput.fname,sep=",",append = TRUE,row.names=FALSE)
+ 		write.table(mondata.pcfilter,file=coutput.fname,sep=",",append = TRUE,row.names=FALSE)
  	} else {
  		print(paste(now(), "No data passed filters for this month...."))
  	}
 
  	# clean up calibration data and gc
- 	rm(mondata.filtered)
+ 	rm(mondata.pcfilter)
  	gc()
-}
+ }
 
-Rprof(NULL)
+
+
+# Rprof(NULL)
 # log.fname <- paste("L1_log",".dat",sep="")
 # log.output <- data.frame(log.yyyy,log.mm,log.pct)
 # write.table(log.output,file=log.fname,sep=",")

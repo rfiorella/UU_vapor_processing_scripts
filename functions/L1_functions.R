@@ -169,3 +169,24 @@ attach.L0.Header.uncompiled <- function(output_filename,metadata_dataframe) {
 
 # compile the function
 attach.L0.Header <- cmpfun(attach.L0.Header.uncompiled)
+
+
+
+post.calibration.filter <- function(qcchecked.data.frame) {
+  # calculate some derivatives, though might not use all of them...
+  time.diff <- diff(qcchecked.data.frame$EPOCH_TIME)
+  h2o.diff <- diff(qcchecked.data.frame$H2O)
+  d18O.diff <- diff(qcchecked.data.frame$Delta_18_16)
+  d2H.diff <- diff(qcchecked.data.frame$Delta_D_H)
+
+  # apply a filter. removing where |h2o.diff| > 1000
+  # seems to be a good first start.
+  filter.pass.inds <- which(abs(h2o.diff)<1000) + 1 # add 1 due to how diff works!!!
+
+  # omit these rows and return the data frame...
+  output <- qcchecked.data.frame[filter.pass.inds,]
+
+  # return the output
+  return(output)
+}
+
