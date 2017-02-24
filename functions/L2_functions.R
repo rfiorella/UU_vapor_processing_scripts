@@ -177,7 +177,7 @@ calculate.spline.derivatives <- function(spline.fits,breaks) {
 # is somewhat large, but a lot is done under the hood and doesn't need to be stored in memory 
 # following calculation. 
 
-extract.stable.calib.indices <- function(spline.derivatives,H2O.thres=5.0,d18O.thres=0.005,d2H.thres=0.01) {
+extract.stable.calib.indices <- function(spline.derivatives,H2O.thres=5.0,d18O.thres=0.01,d2H.thres=0.1) {
   print(paste(Sys.time()," finding indices corresponding to stable measurements..."))
 
   # allocate output vector
@@ -409,7 +409,7 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
         temp16[i] <- 60*coef(Hmod)[[2]]
         temp17[i] <- summary(Hmod)$r.squared
       } else {
-        print("No inds for this period...")
+        #print("No inds for this period...")
       } # end check for good inds.
     }
   }
@@ -425,15 +425,15 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
   h2o.min <- which(std.avgs$H2O.mean > 2000) # must be at least 2000 ppm
   h2o.max <- which(std.avgs$H2O.mean < 30000) # must be no greater than 30000 ppm
   h2o.lsd <- which(std.avgs$H2O.sd < 1000)  # enforce a measure of stability
-  d18O.lsd <- which(std.avgs$d18O.sd < 0.35) # enforce a measure of isotopic stability
-  d2H.lsd <- which(std.avgs$d2H.sd < 2.5) # enforece a measure of isotopic stability
+  d18O.lsd <- which(std.avgs$d18O.sd < 0.5) # enforce a measure of isotopic stability
+  d2H.lsd <- which(std.avgs$d2H.sd < 4) # enforce a measure of isotopic stability
   # enforce a max length on the calibration data set - calibration periods identified
   # are unlikely to be longer than a half hour. at 1.16 Hz: 60 sec*1.16Hz*30 min = 2088 inds.
   max.length <- which(std.avgs$ind.count <= 4200)
   # also, require at least 2 minutes of data for data points 1.16 Hz*60sec*3 min = 140 inds
-  min.length <- which(std.avgs$ind.count >= 70)
+  min.length <- which(std.avgs$ind.count >= 35)
 
-   retain.inds <- Reduce(intersect,list(h2o.min,h2o.max,h2o.lsd,d18O.lsd,d2H.lsd,max.length,min.length))
+  retain.inds <- Reduce(intersect,list(h2o.min,h2o.max,h2o.lsd,d18O.lsd,d2H.lsd,max.length,min.length))
   
   #retain.inds <- seq(1,nrow(std.avgs),1) # for debugging - keeps all data.
 
@@ -457,7 +457,7 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
 # get.ambient.deltas function - 
 
 get.ambient.deltas <- function(calib.averages,ambient.data) {
-  print(paste(Sys.time(),"Function under construction..."))
+  print(paste(Sys.time(),"Estimate delta of vapor coming through drierite canister before/after analysis..."))
 
   # first, check to see if the month has any calibration averages
   # provided to it.
@@ -800,6 +800,21 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1) {
       "O.slope"=period.Oslope,"O.intercept"=period.Ointercept,"O.r2"=period.Orsq,
       "H.slope"=period.Hslope,"H.intercept"=period.Hintercept,"H.r2"=period.Hrsq)
 
+    # we should cut out any obviously bad calibrations - with 2 points, this can be any period where
+    # r2 is less than 0.95.
+    bad.Hinds <- which(output$H.r2 < 0.9)
+    bad.Oinds <- which(output$O.r2 < 0.9)
+
+    all.bad.inds <- intersect(bad.Hinds,bad.Oinds)
+    print(paste(bad.Hinds,bad.Oinds,all.bad.inds))
+
+    # fix time array to avoid losing coverage (just assume previous calibration period extends to current one for now...)
+    output$stop.time[(all.bad.inds-1)] <- output$stop.time[all.bad.inds]
+
+    # now remove the bad inds...
+    if (length(all.bad.inds)>0) {
+      output <- output[-all.bad.inds,]
+    }
     # return the variables.
     return(output)
   }
