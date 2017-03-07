@@ -13,10 +13,9 @@ There is also a powerpoint presentation/pdf of this presentation in the reposito
 
 A brief description of what each file in the scripts directory does, and what it produces, is provided below. 
 
-##### Brief description of files in the scripts directory:
+#### Brief description of files in the scripts directory:
 1. The _L0_ script concatenate these data files into daily files (starting/ending 0000 GMT), adds metadata,
 restructures the time variables to make them a little more useful, and excludes a few redundant variables. Separate _L0_ files are written for calibration and ambient data for each day - calibration data files retain the same data resolution as the log files, ambient data files are averaged to 1 minute resolution (reducing space taken by these files by ~70x without averaging out "resolvable" high frequency variability).
-
 
 2. The _L1_ script concatenates the daily L0 files to monthly files, and adds a few additional data quality checks. First, data points where the temperature and pressure of the analyzer cavity deviate too far out of spec are removed. Second, a basic data sanity check enforces that only data points where: (a) humidity is positive, (b) delta values are above -1000, (c) delta values are not unreasonably high, defined conservatively as +50 for d18O and +400 for dD. The reason for these permissive bounds is that this sieve is designed to remove only periods where the analyzer is not operating properly and recording values that are not physically possible. These filters were developed based on output from the 1175-HIDS2045 analyzer in the Browning Building, which had some issues with the laser, which has had to be repaired. It is highly likely that expanding these scripts to other Picarro analyzers and analyzer systems will require these filters to be updated.
 
@@ -46,7 +45,7 @@ After this process has been completed for each month of data:
 
 5. _Future development: L4-Lx? scripts that attach important environmental data to the data file - this may include: meteorological data, other trace gas concentrations (e.g., CO2), other isotopic variables (13C of CO2?). I likely will develop one that attaches data from MesoWest or the AmeriFlux network; integrating other data sources will likely be responsibility of end users._
 
-##### Description of data hierarchies used - what is contained in the output at each data level?
+#### Description of data hierarchies used - what is contained in the output at each data level?
 _Raw_ picarro logfiles are at a data resolution of ~1 Hz and are written hourly.
 _L0_ files are daily split into calibration and ambient data - calibration data remains at the same data frequency as analyzer log files, ambient data has been averaged to 1 minute averages to optimize space usage.
 _L1_ files are concatenated L0 files to separate monthly files for calibration and ambient data.
@@ -68,3 +67,8 @@ _L2_ output files include two different files containing the calibration informa
 * slope, intercept, and r2 of hydrogen regression based on calibration data immediately preceeding and following each ambient data measurement period.
 
 _L3_ output are essentially the calibrated version of the _L1_ ambient files. They take the _L1_ ambient file and use the _L2_ CalibrationRegressionData file to adjust the _L1_ ambient data to a humidity-corrected VSMOW scale.
+
+#### Development Roadmap
+1. Increasing the metadata output to be more complete for L0, L1, L2, and L3 levels.
+2. Adding a debug option to all of the functions that make the output **EXTREMELY** verbose to assist with debugging.
+3. Adding a wiki article about the correction between humidity-delta dependence and methods of correction.
