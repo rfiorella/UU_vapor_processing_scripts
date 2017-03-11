@@ -17,15 +17,94 @@ library(RColorBrewer)
 # Set user variables
 #--------------------------------------------------------------------------
 # set initial and final dates for processing.
-start.date <- ymd("2014-01-01")
-end.date <- ymd("2016-01-01")
+start.date <- ymd("2016-12-01")
+end.date <- ymd("2017-03-01")
 
 # where is the input data and where should we write the output data?
-path.to.L1.data <- "~/WBB_VAPOR/L1/testing/"
-path.to.output.L2.data <-  "~/WBB_VAPOR/L2/testing/"
+path.to.L1.data <- "~/VaporData/WBB_VAPOR/L1/testing/"
+path.to.output.L2.data <-  "~/VaporData/WBB_VAPOR/L2/WBB_SBD_comp/"
 
 # run several pdf diagnostic plots? (logical value)
-RUN_PLOTS <- "TRUE"
+RUN_PLOTS <- "FALSE"
+
+# set debug level
+debug <- 0
+
+# In a slightly different way than scripts L0 and L2 operate,
+# this function *REQUIRES* attention from the user! You must
+# define what the standards are (name, d18O, and d2H here!!)
+
+assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) {
+  # need to assign standard names and d18O, dD values (VSMOW) based on 
+  # corrected concentrations.
+  # first, break into subsets based on compositions
+
+  std.switch <- as.numeric(as.POSIXct("2013-11-15",tz="GMT",origin="1970-01-01"))
+
+  UD.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean < std.switch)
+  PZ.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean < std.switch)
+  UT.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean > std.switch)
+  FL.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean > std.switch)
+
+  # assign standard name/values
+  PZ.standard <- "PZ"
+  PZ.standard.OValue <- 1.65
+  PZ.standard.DValue <- 16.9
+
+  UD.standard <- "UD"
+  UD.standard.OValue <- -16.52
+  UD.standard.DValue <- -123.1
+
+  UT.standard <- "UT"
+  UT.standard.OValue <- -16.0
+  UT.standard.DValue <- -121.0
+
+  FL.standard <- "FL"
+  FL.standard.OValue <- -1.23
+  FL.standard.DValue <- -5.51
+
+  # fit standard values into the vectors corresponding to proper indices in standard.data.frame
+  add.names <- vector(length=nrow(data))
+  add.std.Oval <- vector(length=nrow(data))
+  add.std.Dval <- vector(length=nrow(data))
+
+  # if data for the standard exists, loop through and assign it to these rows.
+  if (!is.null(UD.stds) & length(UD.stds)>0) {
+    add.names[UD.stds] <- rep(UD.standard,length(UD.stds))
+    add.std.Oval[UD.stds] <- rep(UD.standard.OValue,length(UD.stds))
+    add.std.Dval[UD.stds] <- rep(UD.standard.DValue,length(UD.stds))
+  }
+
+  if (!is.null(PZ.stds) & length(PZ.stds)>0) {
+    add.names[PZ.stds] <- rep(PZ.standard,length(PZ.stds))
+    add.std.Oval[PZ.stds] <- rep(PZ.standard.OValue,length(PZ.stds))
+    add.std.Dval[PZ.stds] <- rep(PZ.standard.DValue,length(PZ.stds))
+  }
+
+  if (!is.null(UT.stds) & length(UT.stds)>0) {
+    add.names[UT.stds] <- rep(UT.standard,length(UT.stds))
+    add.std.Oval[UT.stds] <- rep(UT.standard.OValue,length(UT.stds))
+    add.std.Dval[UT.stds] <- rep(UT.standard.DValue,length(UT.stds))
+  }
+
+  if (!is.null(FL.stds) & length(FL.stds)>0) {
+    add.names[FL.stds] <- rep(FL.standard,length(FL.stds))
+    add.std.Oval[FL.stds] <- rep(FL.standard.OValue,length(FL.stds))
+    add.std.Dval[FL.stds] <- rep(FL.standard.DValue,length(FL.stds))
+  }
+
+  # add columns to standard.data.frame
+  data <- cbind(data,add.names,add.std.Oval,add.std.Dval)
+
+  # rename column headers to something more useful
+  names(data)[names(data) == 'add.names'] <- 'standard.name'
+  names(data)[names(data) == 'add.std.Oval'] <- 'standard.O18.VSMOW'
+  names(data)[names(data) == 'add.std.Dval'] <- 'standard.H2.VSMOW'
+
+  # return standard.data.frame
+  return(data)
+}
+
 #--------------------------------------------------------------------------
 # Begin processing calibration data...
 
@@ -49,7 +128,7 @@ raw.file.list <- list()
 raw.file.list <- list.files(path=path.to.L1.data,pattern="CalibData",full.names=TRUE,recursive=TRUE)
 
 # find month for each file
-raw.file.dates <- extract.date.from.L1.files(raw.file.list) 
+raw.file.dates <- extract.date.from.L1.files(raw.file.list,dbg.level=debug) 
 
 # subset list based on period of interest
 subset.list <- raw.file.list[raw.file.dates %within% period]
@@ -63,7 +142,7 @@ amb.file.list <- list()
 amb.file.list <- list.files(path=path.to.L1.data,pattern="AmbientData",full.names=TRUE,recursive=TRUE)
 
 # find month for each file
-amb.file.dates <- extract.date.from.L1.files(amb.file.list) 
+amb.file.dates <- extract.date.from.L1.files(amb.file.list,dbg.level=debug) 
 
 # subset list based on period of interest
 amb.subset <- amb.file.list[amb.file.dates %within% period]
@@ -127,10 +206,10 @@ for (i in 1:nmonths) {
 	##########################################################################
     
 	# identify breakpoints
-	breaks <- ID.calib.breakpoints(calib.data)
+	breaks <- ID.calib.breakpoints(calib.data,dbg.level=debug)
 
 	# calculate initial set of splines as a check on breaks
-	spline.fits <- fit.calibration.splines(calib.data,breaks)
+	spline.fits <- fit.calibration.splines(calib.data,breaks,dbg.level=debug)
 	
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # DIAGNOSTIC PLOT 1: Plot each peak period identified by ID.calib.breakpoints
@@ -156,7 +235,7 @@ for (i in 1:nmonths) {
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	# now that we have nice smooth splines, estimate derivatives...
-	spline.derivatives <- calculate.spline.derivatives(spline.fits,breaks)
+	spline.derivatives <- calculate.spline.derivatives(spline.fits,breaks,dbg.level=debug)
 
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # DIAGNOSTIC PLOT 2: plot the first derivative of each identified peak period
@@ -180,7 +259,7 @@ for (i in 1:nmonths) {
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     
 	# based on threshold values calculate list of indices to keep from each peak
-	good.inds <- extract.stable.calib.indices(spline.derivatives)
+	good.inds <- extract.stable.calib.indices(spline.derivatives,dbg.level=debug)
 
     # quick filter here - should there be a minimum number of "good" points
     # required to define an analysis as a "standard" and retain the averages?
@@ -193,7 +272,7 @@ for (i in 1:nmonths) {
 
 
 	# based on the good points identified, calculate averages for each plateau
-	calib.avgs[[i]] <- calculate.standard.averages(calib.data,good.inds,memory.filter=FALSE)
+	calib.avgs[[i]] <- calculate.standard.averages(calib.data,good.inds,memory.filter=FALSE,dbg.level=debug)
 
     # attach nearby ambient data to calibration data frame.
     #-------------------------------------------------------
@@ -225,7 +304,7 @@ for (i in 1:nmonths) {
         # increment gcount
         gcount <- gcount+1    
 
-    ambient.buffers[[i]] <-  get.ambient.deltas(calib.avgs[[i]],amb.data)
+    ambient.buffers[[i]] <-  get.ambient.deltas(calib.avgs[[i]],amb.data,dbg.level=debug)
 
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     # DIAGNOSTIC PLOT 3: plot the points selected by the spline thresholds 
@@ -471,16 +550,16 @@ ambient.bracket.all <- do.call(rbind,ambient.buffers)
 calib.averages.wamb <- cbind(calib.averages.all,ambient.bracket.all)
 
 # correct for delta dependence on concentration
-calib.averages.wamb.mrc <- apply.mixingratio.correction.calibration(calib.averages.wamb)
+calib.averages.wamb.mrc <- apply.mixingratio.correction.calibration(calib.averages.wamb,dbg.level=debug)
 
 # correct standard values for vapor bleeding through drierite canister...
-calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc)
+calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc,dbg.level=debug)
 
 # assign standard names to each calibration period
 calib.averages.wamb.mrc.bgc.wstds <- assign.standard.names.and.values(calib.averages.wamb.mrc.bgc)
 
 # calculate the correction slopes/intercepts.
-calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds)
+calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds,dbg.level=debug)
 
 #------------------------------------------------------------------------
 # Write out calibration parameters into a data file.
