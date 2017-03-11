@@ -38,11 +38,13 @@ print(paste(Sys.time(),"Loading and compiling L0 functions..."))
 # SET USER OPTIONS
 ######################################################################################################################################
 
-startdate <- "2015-10-12" #expects a number in yyyymmdd format - will begin at MIDNIGHT GMT.
-enddate   <- "2016-01-07" #expects a number in yyyymmdd format - will end at MIDNIGHT GMT.
+startdate <- "2016-12-07" #expects a number in yyyymmdd format - will begin at MIDNIGHT GMT.
+enddate   <- "2017-03-01" #expects a number in yyyymmdd format - will end at MIDNIGHT GMT.
 
-path.to.data <- "~/WBB_VAPOR/Raw/"
-path.to.output.L0.data <- "~/WBB_VAPOR/L0/testing/"
+path.to.data <- "~/VaporData/SBD_VAPOR/Raw/"
+path.to.output.L0.data <- "~/VaporData/SBD_VAPOR/L0/testing/"
+
+debug <- 0 # set to 0 for no diag output, >0 for increased diagnostic levels for debugging.
              
 ######################################################################################################################################
 # SET METADATA
@@ -70,7 +72,7 @@ raw.file.list <- list()
 raw.file.list <- list.files(path = path.to.data, full.names=TRUE, recursive=TRUE)
 
 # extract a vector of dates from the file names corresponding to each file.
-dates <- extract.date.from.files(raw.file.list)
+dates <- extract.date.from.files(raw.file.list,dbg.level=debug)
 
 ################################################################################################
 # loop through days and create daily files.
@@ -111,10 +113,10 @@ for (i in 1:ndays) {
   # add padding to these numbers - look to the ~two files before and after to ensure that each
   # file has a full 24 hours of data where available. This is required since if a log file begins
   # after 23:00 the previous day, some data for day x will be held in the folder of day x-1.
-  file.inds.to.include <- pad.file.indices(files.within.day,raw.file.list)
+  file.inds.to.include <- pad.file.indices(files.within.day,raw.file.list,dbg.level=debug)
 
   # loop through log files for that particular day and concatenate
-  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list,useParallel=FALSE)
+  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list,useParallel=FALSE,dbg.level=debug)
 
   # fix time variables for output - 2 fixes need to be made:
   # (1) there are several redundant time variables. remove extra ones.
@@ -122,7 +124,7 @@ for (i in 1:ndays) {
   daily.data.frame <- daily.data.frame[!vars.to.remove]
 
   # (2) restructure DATE and TIME columns to give yyyy, month, dd, hh, minute, ss vars
-  daily.data.wtimefix <- restructure.time.variables(daily.data.frame)
+  daily.data.wtimefix <- restructure.time.variables(daily.data.frame,dbg.level=debug)
 
   #--------------------------------------------------------------------
   # LOG FILE - INFORMATION ABOUT HOW MUCH DATA CORRESPONDS TO EACH DAY
@@ -130,8 +132,8 @@ for (i in 1:ndays) {
   #--------------------------------------------------------------------
 
   # divide into ambient and calibration data files
-  calib.data <- extract.calib.periods(daily.data.wtimefix)
-  amb.data <- extract.ambient.periods(daily.data.wtimefix)
+  calib.data <- extract.calib.periods(daily.data.wtimefix,dbg.level=debug)
+  amb.data <- extract.ambient.periods(daily.data.wtimefix,dbg.level=debug)
 
   # clean up original data
   rm(daily.data.wtimefix)
@@ -139,7 +141,7 @@ for (i in 1:ndays) {
   gc()
 
   # reduce ambient data.
-  amb.data.avgd <- reduce.ambient.data(amb.data)
+  amb.data.avgd <- reduce.ambient.data(amb.data,dbg.level=debug)
   
   # WRITE OUT DAILY FILES FOR BOTH AMBIENT DATA, CALIBRATION DATA.
   #-----------------------------------
