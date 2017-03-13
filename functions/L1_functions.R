@@ -30,7 +30,13 @@ print(paste(Sys.time(),"Number of available cores for parallel processing:",no_c
 # path, output is a list of just dates. from this, the indices matching each month can 
 # easily be extracted.
 
-extract.date.from.L0.files <- function(file.list) {
+extract.date.from.L0.files <- function(file.list,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("============================================")
+    print("starting extract.date.from.L0.files function")
+  }
+
   # suppress warnings in this function - as.numeric will create NAs by coercion,
   # and this will be reported as a warning to the screen every time. But since this
   # is precisely what we are hoping to do, warnings are unncessary here.
@@ -46,6 +52,13 @@ extract.date.from.L0.files <- function(file.list) {
   options(warn = oldw)
   # return date list
   return(file.name.dates.woNAs)
+
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending extract.date.from.L0.files function")
+    print("==========================================")
+  }
+
 }
 
 #------------------------------------------------------------------------------------
@@ -53,7 +66,13 @@ extract.date.from.L0.files <- function(file.list) {
 # concatenate to a single monthly data frame. requires as an input a list of files to 
 # concatenate, and returns the monthly data frame.
 
-concatenate.to.monthly.uncompiled <- function(month.list,useParallel=TRUE) {
+concatenate.to.monthly.uncompiled <- function(month.list,useParallel=TRUE,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("++++++++++++++++++++++++++++++++++++++++")
+    print("starting concatenate.to.monthly function")
+  }
+
   print(paste(Sys.time()," Concatenating daily L0 files to a single monthly file..."))
   # require that indices be of type list...
   stopifnot(is.list(month.list))
@@ -85,6 +104,13 @@ concatenate.to.monthly.uncompiled <- function(month.list,useParallel=TRUE) {
 
   # return concatenated data
   return(output)
+
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending concatenate.to.monthly function")
+    print("++++++++++++++++++++++++++++++++++++++")
+  }
+
 }
 
 concatenate.to.monthly <- cmpfun(concatenate.to.monthly.uncompiled)
@@ -99,7 +125,13 @@ concatenate.to.monthly <- cmpfun(concatenate.to.monthly.uncompiled)
 # input is the monthly data frame, output is the monthly data frame with flagged
 # points removed.
 
-qflag.uncompiled <- function(x){
+qflag.uncompiled <- function(x,dbg.level=0){
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("&&&&&&&&&&&&&&&&&&&&&&&")
+    print("starting qflag function")
+  }
+
   print(paste(now()," Removing points that fail instrument quality checks..."))
   # save number of rows initially to calculate how many data points are removed.
   begin <- nrow(x)
@@ -114,6 +146,13 @@ qflag.uncompiled <- function(x){
   output <- list("data"=x,"pct.discarded"=round(100*(1-end/begin),2))
   # return list
   return(output)
+
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending qflag function")
+    print("&&&&&&&&&&&&&&&&&&&&&")
+  }
+
 }
 
 qflag <- cmpfun(qflag.uncompiled)
@@ -123,7 +162,13 @@ qflag <- cmpfun(qflag.uncompiled)
 # (e.g., impossible delta or H2o values). This function is explicitly conservative
 # to only remove values that are extremely improbably to be correct...
 
-data.sanity.check.uncompiled <- function(x) {
+data.sanity.check.uncompiled <- function(x,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+    print("starting data.sanity.check function")
+  }
+
   print(paste(now()," Removing points that fail data sanity checks..."))
   # save number of initial rows for future calculations
   begin <- nrow(x)
@@ -144,6 +189,13 @@ data.sanity.check.uncompiled <- function(x) {
   output <- list("data"=x,"pct.discarded"=round(100*(1-end/begin),2))
   # return output list
   return(output)
+
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending data.sanity.check function")
+    print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+  }
+
 }
 
 data.sanity.check <- cmpfun(data.sanity.check.uncompiled)
@@ -153,7 +205,13 @@ data.sanity.check <- cmpfun(data.sanity.check.uncompiled)
 # this function creates the header for datafiles and attaches the metadata
 # loaded into a csv file.
 
-attach.L0.Header.uncompiled <- function(output_filename,metadata_dataframe) {
+attach.L0.Header.uncompiled <- function(output_filename,metadata_dataframe,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("==================================")
+    print("starting attach.L0.Header function")
+  }
+
   sink(output_filename)
   cat(paste("# ",nrow(metadata_dataframe)+4,"\n",sep=""))
   cat("# BEGIN HEADER \n")
@@ -165,14 +223,33 @@ attach.L0.Header.uncompiled <- function(output_filename,metadata_dataframe) {
   # if the lubridate package is active.
   cat("# END HEADER \n")
   sink()
+
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending attach.L0.Header function")
+    print("================================")
+  }
+
+
 }
 
 # compile the function
 attach.L0.Header <- cmpfun(attach.L0.Header.uncompiled)
 
+#----------------------------------------------------
+# create post.calibration.filter function
+# often after a calibratino period, there are apparent discontinuities in the 
+# data that make it appear is if there are very rapid h2o/isotope changes
+# in the ambient data that are wholly artifacts of the SDM/Picarro valve sequences
+# this function is designed to filter out these discontinuities.
 
+post.calibration.filter <- function(qcchecked.data.frame,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("+++++++++++++++++++++++++++++++++++++++++")
+    print("starting post.calibration.filter function")
+  }
 
-post.calibration.filter <- function(qcchecked.data.frame) {
   # calculate some derivatives, though might not use all of them...
   time.diff <- diff(qcchecked.data.frame$EPOCH_TIME)
   h2o.diff <- diff(qcchecked.data.frame$H2O)
@@ -188,5 +265,13 @@ post.calibration.filter <- function(qcchecked.data.frame) {
 
   # return the output
   return(output)
+
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending post.calibration.filter function")
+    print("+++++++++++++++++++++++++++++++++++++++")
+  }
+
+
 }
 

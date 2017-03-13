@@ -19,11 +19,11 @@ library(lubridate)
 source("../functions/L1_functions.R")
 
 # Set user variables
-start.date <- ymd("2014-06-01")
-end.date <- ymd("2014-07-01")
+start.date <- ymd("2016-12-07")
+end.date <- ymd("2017-03-01")
 
-path.to.L0.data <- "~/WBB_VAPOR/L0/testing/"
-path.to.output.L1.data <-  "~/WBB_VAPOR/L1/testing/"
+path.to.L0.data <- "~/VaporData/SBD_VAPOR/L0/testing/"
+path.to.output.L1.data <-  "~/VaporData/SBD_VAPOR/L1/testing/"
 ######################################################################################################################################
 # SET METADATA
 # write out metadata to help data curation - these will be appended to the top of the data files currently. it might be possible in
@@ -53,7 +53,7 @@ cal.file.list <- list()
 cal.file.list <- list.files(path=path.to.L0.data,pattern="CalibData",full.names=TRUE,recursive=TRUE)
 
 # find month for each file
-cal.file.dates <- extract.date.from.L0.files(cal.file.list)	
+cal.file.dates <- extract.date.from.L0.files(cal.file.list,dbg.level=debug)	
 
 # subset list based on period of interest
 cal.subset <- cal.file.list[cal.file.dates %within% period]
@@ -67,7 +67,7 @@ amb.file.list <- list()
 amb.file.list <- list.files(path=path.to.L0.data,pattern="AmbientData",full.names=TRUE,recursive=TRUE)
 
 # find month for each file
-amb.file.dates <- extract.date.from.L0.files(amb.file.list) 
+amb.file.dates <- extract.date.from.L0.files(amb.file.list,dbg.level=debug) 
 
 # subset list based on period of interest
 amb.subset <- amb.file.list[amb.file.dates %within% period]
@@ -100,16 +100,16 @@ for (i in 1:nmonths) {
 	}
 
 	# concatenate to monthly array
-	mondata <- concatenate.to.monthly(file.list.by.month[[i]])
+	mondata <- concatenate.to.monthly(file.list.by.month[[i]],dbg.level=debug)
 
 	# rough instrument status check and data sanity checks.
-	mondata.qflag <- qflag(mondata)
+	mondata.qflag <- qflag(mondata,dbg.level=debug)
 	# clean up memory and gc
 	rm(mondata)
 	gc()
 
 	# NOTE: $data required here since output of qflag is a list!
-	mondata.filtered <- data.sanity.check(mondata.qflag$data) 
+	mondata.filtered <- data.sanity.check(mondata.qflag$data,dbg.level=debug) 
 
 	# get data row for log file - 
 	log.yyyy[i] <- year(start.date %m+% months(i-1))
@@ -133,7 +133,7 @@ for (i in 1:nmonths) {
  	  	  (start.date %m+% months(i-1)),"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
 
  		# attach metadata
- 		attach.L0.Header(coutput.fname,metadata.frame)
+ 		attach.L0.Header(coutput.fname,metadata.frame,dbg.level=debug)
 
  		# write out data portion of the data file.
  		write.table(mondata.filtered$data,file=coutput.fname,sep=",",append = TRUE,row.names=FALSE)
@@ -175,16 +175,16 @@ for (i in 1:nmonths) {
 	}
 
 	# concatenate to monthly array
-	mondata <- concatenate.to.monthly(file.list.by.month[[i]])
+	mondata <- concatenate.to.monthly(file.list.by.month[[i]],dbg.level=debug)
 
 	# rough instrument status check and data sanity checks.
-	mondata.qflag <- qflag(mondata)
+	mondata.qflag <- qflag(mondata,dbg.level=debug)
 	# clean up memory and gc
 	rm(mondata)
 	gc()
 
 	# NOTE: $data required here since output of qflag is a list!
-	mondata.qccheck <- data.sanity.check(mondata.qflag$data) 
+	mondata.qccheck <- data.sanity.check(mondata.qflag$data,dbg.level=debug) 
 
 	# get data row for log file - 
 	log.yyyy[i] <- year(start.date %m+% months(i-1))
@@ -197,25 +197,7 @@ for (i in 1:nmonths) {
 	# ambient data needs a bit more filtering here - namely, after a calibration period
 	# there are often apparent discontinuities in the data that are problematic...
 
-	post.calibration.filter <- function(qcchecked.data.frame) {
-		# calculate some derivatives, though might not use all of them...
-		time.diff <- diff(qcchecked.data.frame$EPOCH_TIME)
-		h2o.diff <- diff(qcchecked.data.frame$H2O)
-		d18O.diff <- diff(qcchecked.data.frame$Delta_18_16)
-		d2H.diff <- diff(qcchecked.data.frame$Delta_D_H)
-
-		# apply a filter. removing where |h2o.diff| > 1000
-		# seems to be a good first start.
-		filter.pass.inds <- which(abs(h2o.diff)<1000) + 1 # add 1 due to how diff works!!!
-
-		# omit these rows and return the data frame...
-		output <- qcchecked.data.frame[filter.pass.inds,]
-
-		# return the output
-		return(output)
-	}
-
-	mondata.pcfilter <- post.calibration.filter(mondata.qccheck$data)
+	mondata.pcfilter <- post.calibration.filter(mondata.qccheck$data,dbg.level=debug)
 
 	# clean up memory and gc
 	rm(mondata.qflag)
@@ -232,7 +214,7 @@ for (i in 1:nmonths) {
  	  	  (start.date %m+% months(i-1)),"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
 
  		# attach metadata
- 		attach.L0.Header(coutput.fname,metadata.frame)
+ 		attach.L0.Header(coutput.fname,metadata.frame,dbg.level=debug)
 
  		# write out data portion of the data file.
  		write.table(mondata.pcfilter,file=coutput.fname,sep=",",append = TRUE,row.names=FALSE)
