@@ -25,6 +25,7 @@ path.to.L2.calib.data <- "~/WBB_VAPOR/L2/testing/"
 path.to.output.L3.data <-  "~/WBB_VAPOR/L3/testing/"
 
 RUN_PLOTS <- "TRUE"
+debug <- 1 # 0 for no debugging, >0 for (increasingly verbose) debugging
 
 # LOAD CALIBRATION DATA
 period <- interval(start.date,end.date)
@@ -42,7 +43,7 @@ raw.file.list <- list()
 raw.file.list <- list.files(path=path.to.L1.data,pattern="AmbientData",full.names=TRUE,recursive=TRUE)
 
 # find month for each file
-raw.file.dates <- extract.date.from.L1.files(raw.file.list)	
+raw.file.dates <- extract.date.from.L1.files(raw.file.list,dbg.level=debug)	
 
 # subset list based on 
 subset.list <- raw.file.list[raw.file.dates %within% period]

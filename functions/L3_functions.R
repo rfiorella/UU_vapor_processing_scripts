@@ -1,6 +1,12 @@
 # L3 functions - need to update the header here...
 
-extract.date.from.L1.files <- function(file.list) {
+extract.date.from.L1.files <- function(file.list,dbg.level=0) {
+  # print statement announcing the beginning of the function
+  if (dbg.level>0) { 
+    print("============================================")
+    print("Start of extract.date.from.L1.files function") 
+  }
+
   # suppress warnings in this function - as.numeric will create NAs by coercion,
   # and this will be reported as a warning to the screen every time. But since this
   # is precisely what we are hoping to do, warnings are unncessary here.
@@ -16,5 +22,11 @@ extract.date.from.L1.files <- function(file.list) {
   options(warn = oldw)
   # return date list
   return(file.name.dates.woNAs)
+
+  # print statement announcing the beginning of the function
+  if (dbg.level>0) { 
+    print("End of extract.date.from.L1.files function") 
+    print("==========================================")
+  }
 }
 
