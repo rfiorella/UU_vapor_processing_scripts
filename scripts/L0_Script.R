@@ -25,8 +25,6 @@
 
 rm(list=ls())
 
-set.seed(1) # reproducability.
-
 #Rprof("L0profile_30jan17")
 ######################################################################################################################################
 # load associated function file(s) 
@@ -35,25 +33,9 @@ source("../functions/L0_Functions.R")
 print(paste(Sys.time(),"Loading and compiling L0 functions..."))
 
 ######################################################################################################################################
-# SET USER OPTIONS
+# LOAD USER OPTIONS
 ######################################################################################################################################
-
-startdate <- "2016-12-07" #expects a number in yyyymmdd format - will begin at MIDNIGHT GMT.
-enddate   <- "2017-03-01" #expects a number in yyyymmdd format - will end at MIDNIGHT GMT.
-
-path.to.data <- "~/VaporData/SBD_VAPOR/Raw/"
-path.to.output.L0.data <- "~/VaporData/SBD_VAPOR/L0/testing/"
-
-debug <- 0 # set to 0 for no diag output, >0 for increased diagnostic levels for debugging.
-             
-######################################################################################################################################
-# SET METADATA
-# write out metadata to help data curation - these will be appended to the top of the data files currently. it might be possible in
-# later versions to use this to write out an xml file?
-######################################################################################################################################
-
-metadata.frame <- read.csv("../metadata_templates/L0_WBB_metadata.csv",header=TRUE)
-
+source("../user/L0_user_specs.R")
 ######################################################################################################################################
 # SET DATE LIMITS
 
@@ -141,7 +123,10 @@ for (i in 1:ndays) {
   gc()
 
   # reduce ambient data.
-  amb.data.avgd <- reduce.ambient.data(amb.data,dbg.level=debug)
+  amb.data.avgd <- reduce.ambient.data(amb.data,
+    time.length.average=averaging.length.in.minutes,
+    minimum.points.to.average=minimum.number.of.datapoints,
+    dbg.level=debug)
   
   # WRITE OUT DAILY FILES FOR BOTH AMBIENT DATA, CALIBRATION DATA.
   #-----------------------------------
@@ -150,7 +135,7 @@ for (i in 1:ndays) {
   if (!is.null(amb.data.avgd)) {
     if (nrow(amb.data.avgd) > 0) {
       print(paste(Sys.time()," Writing out ambient data file..."))
-      aoutput.fname <- paste(path.to.output.L0.data,"WBB_Water_Vapor_AmbientData_L0_",
+      aoutput.fname <- paste(path.to.output.L0.data,output.file.prefix,"_AmbientData_L0_",
         date.to.process,"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
 
       # attach metadata
@@ -168,7 +153,7 @@ for (i in 1:ndays) {
   if (nrow(calib.data) > 0) {
     print(paste(Sys.time()," Writing out calibration data frame..."))
     # generate output filename
-    coutput.fname <- paste(path.to.output.L0.data,"WBB_Water_Vapor_CalibData_L0_",
+    coutput.fname <- paste(path.to.output.L0.data,output.file.prefix,"_CalibData_L0_",
         date.to.process,"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
 
     # attach metadata
