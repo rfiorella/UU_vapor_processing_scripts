@@ -18,20 +18,8 @@ library(lubridate)
 # load associated functions
 source("../functions/L1_functions.R")
 
-# Set user variables
-start.date <- ymd("2016-12-07")
-end.date <- ymd("2017-03-01")
-
-path.to.L0.data <- "~/VaporData/SBD_VAPOR/L0/testing/"
-path.to.output.L1.data <-  "~/VaporData/SBD_VAPOR/L1/testing/"
-######################################################################################################################################
-# SET METADATA
-# write out metadata to help data curation - these will be appended to the top of the data files currently. it might be possible in
-# later versions to use this to write out an xml file?
-######################################################################################################################################
-
-metadata.frame <- read.csv("../metadata_templates/L0_WBB_metadata.csv",header=TRUE)
-
+# load user parameters
+source("../user/L1_user_specs.R")
 ##########################################################################
 # LOAD DAILY DATA, CONCATENATE TO MONTHLY, THEN SEPARATE INTO 
 # CALIBRATION AND AMBIENT MEASUREMENT PERIODS
@@ -129,7 +117,7 @@ for (i in 1:nmonths) {
  	if (nrow(mondata.filtered$data) > 0) {
  		print(paste(now()," Writing out calibration data frame..."))
  		# generate output filename
- 		coutput.fname <- paste(path.to.output.L1.data,"WBB_Water_Vapor_CalibData_L1_",
+ 		coutput.fname <- paste(path.to.output.L1.data,output.file.prefix,"_CalibData_L1_",
  	  	  (start.date %m+% months(i-1)),"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
 
  		# attach metadata
@@ -210,7 +198,7 @@ for (i in 1:nmonths) {
  	if (nrow(mondata.pcfilter) > 0) {
  		print(paste(now()," Writing out ambient data frame..."))
  		# generate output filename
- 		coutput.fname <- paste(path.to.output.L1.data,"WBB_Water_Vapor_AmbientData_L1_",
+ 		coutput.fname <- paste(path.to.output.L1.data,output.file.prefix,"_AmbientData_L1_",
  	  	  (start.date %m+% months(i-1)),"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
 
  		# attach metadata
@@ -226,8 +214,6 @@ for (i in 1:nmonths) {
  	rm(mondata.pcfilter)
  	gc()
  }
-
-
 
 # Rprof(NULL)
 # log.fname <- paste("L1_log",".dat",sep="")
