@@ -9,12 +9,12 @@ start.date <- ymd("2016-12-01")
 end.date <- ymd("2017-03-01")
 
 # 2. where is the data we're processing? and where should we save output data?
-path.to.L0.data <- "~/VaporData/SBD_VAPOR/L0/testing/"
-path.to.output.L1.data <-  "~/VaporData/SBD_VAPOR/L1/testing/"
+path.to.L0.data <- "~/VaporData/WBB_VAPOR/L0/testing/"
+path.to.output.L1.data <-  "~/VaporData/WBB_VAPOR/L1/testing/"
 
 # 3. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
-output.file.prefix <- "SBD_Water_Vapor"
+output.file.prefix <- "WBB_Water_Vapor"
 
 # 4. Is debugging necessary? This parameter will help determine why code is crashing.
 debug <- 1

@@ -38,7 +38,7 @@ print("==================================================================")
 cal.file.list <- list()
 
 # list of all raw files
-cal.file.list <- list.files(path=path.to.L0.data,pattern="CalibData",full.names=TRUE,recursive=TRUE)
+cal.file.list <- list.files(path=path.to.L0.data,pattern="CalibData",full.names=TRUE,recursive=FALSE)
 
 # find month for each file
 cal.file.dates <- extract.date.from.L0.files(cal.file.list,dbg.level=debug)	
@@ -52,7 +52,7 @@ cal.subset <- cal.file.list[cal.file.dates %within% period]
 amb.file.list <- list()
 
 # list of all raw files
-amb.file.list <- list.files(path=path.to.L0.data,pattern="AmbientData",full.names=TRUE,recursive=TRUE)
+amb.file.list <- list.files(path=path.to.L0.data,pattern="AmbientData",full.names=TRUE,recursive=FALSE)
 
 # find month for each file
 amb.file.dates <- extract.date.from.L0.files(amb.file.list,dbg.level=debug) 
