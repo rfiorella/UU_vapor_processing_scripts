@@ -64,7 +64,7 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
   # need to add 1 to the indices returned by diff 
   out1 <- which(tmp>thres)+1
 
-  # add points to the beginning and end f the array to fully bound first/last plateaus
+  # add points to the beginning and end of the array to fully bound first/last plateaus
   out1 <- c(1,out1,nrow(calibration.data.frame)) 
 
   # in cases of power failure or some other hiccup, sometimes two consecutive points
@@ -87,6 +87,7 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
     tmp.splines <- smooth.spline(calibration.data.frame$EPOCH_TIME[ini.breaks[i]:(ini.breaks[i+1]-1)],
       calibration.data.frame$H2O[ini.breaks[i]:(ini.breaks[i+1]-1)],df=96,tol=1e-4)
     tmp.spline.deriv <- c(NA,diff(tmp.splines$y)) # initial NA required to keep vector same length.
+    print(tmp.spline.deriv)
     # find indices where derivative is "exceedingly" far from zero
     tmp.inds <- which(abs(tmp.spline.deriv)>50) # 
     tmp.inds.diff <- c(NA,diff(tmp.inds)) # add initial NA to keep tmp.inds and tmp.inds.diff the same length
@@ -511,10 +512,10 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
 
   # filter out some obviously incorrect points.
   h2o.min <- which(std.avgs$H2O.mean > 2000) # must be at least 2000 ppm
-  h2o.max <- which(std.avgs$H2O.mean < 30000) # must be no greater than 30000 ppm
+  h2o.max <- which(std.avgs$H2O.mean < 40000) # must be no greater than 30000 ppm
   h2o.lsd <- which(std.avgs$H2O.sd < 1000)  # enforce a measure of stability
-  d18O.lsd <- which(std.avgs$d18O.sd < 0.5) # enforce a measure of isotopic stability
-  d2H.lsd <- which(std.avgs$d2H.sd < 4) # enforce a measure of isotopic stability
+  d18O.lsd <- which(std.avgs$d18O.sd < 1) # enforce a measure of isotopic stability
+  d2H.lsd <- which(std.avgs$d2H.sd < 8) # enforce a measure of isotopic stability
   # enforce a max length on the calibration data set - calibration periods identified
   # are unlikely to be longer than a half hour. at 1.16 Hz: 60 sec*1.16Hz*30 min = 2088 inds.
   max.length <- which(std.avgs$ind.count <= 4200)
@@ -673,7 +674,7 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
 # in L1_Calibration_Parameters.R. Other regressions are possible for correcting for
 # concentration dependence, but have not be implemented in this code base yet.
 
-apply.mixingratio.correction.calibration <- function(avg.data.frame,dbg.level=0) {
+apply.mixingratio.correction.calibration <- function(avg.data.frame,dbg.level=0,fit.type,Oslope,Hslope) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
@@ -684,29 +685,17 @@ apply.mixingratio.correction.calibration <- function(avg.data.frame,dbg.level=0)
   # start work of function
 
   print(paste(now()," Applying mixing ratio correction to: ",deparse(substitute(avg.data.frame))))
-  # this function assumes that it is receiving a data frame that has named variables
-  # H2O, Delta_18_16, Delta_D_H
-  O_slope <- 1e-10
-  O_intercept <- 1e-10
-
-  D_slope <- 1e-10
-  D_intercept <- 1e-10
-
-  # check to see if necessary variables are included in the input data frame - force script to stop if 
-  # variable is not in input!
-  # if (!"Delta_18_16.mean" %in% colnames(avg.data.frame)) {
-  #   stop("Delta_18_16.mean variable not in input data frame!")
-  # }
-  # if (!"Delta_D_H.mean" %in% colnames(avg.data.frame)) {
-  #   stop("Delta_D_H.mean variable not in input data frame!")
-  # }
-  # if (!"H2O.mean" %in% colnames(avg.data.frame)) {
-  #   stop("H2O.mean variable not in input data frame!")
-  # }
 
   # apply mixing ratio corrections - this takes coeffiecients specified in L1_Calibration_Parameters.R
-  Delta_18_16_mrc <- avg.data.frame$d18O.mean - O_slope/avg.data.frame$H2O.mean + O_intercept
-  Delta_D_H_mrc <- avg.data.frame$d2H.mean - D_slope/avg.data.frame$H2O.mean + D_intercept
+  if (fit.type=="hyperbolic") {
+    Delta_18_16_mrc <- Oslope*(1/20000-1/avg.data.frame$H2O.mean) + avg.data.frame$d18O.mean 
+    Delta_D_H_mrc <- Hslope*(1/2000-1/avg.data.frame$H2O.mean) + avg.data.frame$d2H.mean
+  } else if (fit.type=="logarithmic") { 
+    Delta_18_16_mrc <- O_slope*(log(1/20000,base=10)-log(1/avg.data.frame$H2O.mean,base=10)) +
+      avg.data.frame$d18O.mean
+    Delta_D_H_mrc <- Hslope*(log(1/20000,base=10)-log(1/avg.data.frame$H2O.mean,base=10)) +
+      avg.data.frame$d2H.mean
+    }
 
   # attach new mrc variables to original data frame.
   avg.data.frame <- cbind(avg.data.frame,Delta_18_16_mrc)

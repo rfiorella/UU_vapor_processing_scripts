@@ -9,18 +9,35 @@ start.date <- ymd("2016-12-01")
 end.date <- ymd("2017-02-01")
 
 # 2. where is the data we're processing? and where should we save output data?
-path.to.L1.data <- "~/VaporData/WBB_VAPOR/L1/testing/"
-path.to.output.L2.data <-  "~/VaporData/WBB_VAPOR/L2/WBB_SBD_comp/"
+path.to.L1.data <- "~/VaporData/SBD_VAPOR/L1/testing/"
+path.to.output.L2.data <-  "~/VaporData/SBD_VAPOR/L2/WBB_SBD_comp/"
 
 # 3. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
 output.file.prefix <- "SBD_Water_Vapor"
 
 # 4. should we run diagnostic plots? (logical value)
-RUN_PLOTS <- "FALSE"
+RUN_PLOTS <- "TRUE"
 
 # 5. Is debugging necessary? This parameter will help determine why code is crashing.
 debug <- 1
+
+# 6. What is the dependence of delta on humidity for this analyzer? 
+# correction is implemented in point-slope formula in the following way
+# delta(@20000ppm) = slope*(1/20000-1/measured.H2O) + measured.delta
+
+# set site...
+site <- "WBB"
+
+if (site=="WBB") {
+  fit.type <- "hyperbolic" # allowed values: hyperbolic (1/H2O)
+  Oslope <- -3.618*10^3
+  Hslope <- -1.656*10^4
+} else if (site=="Snowbird") {
+  fit.type <- "logarithmic" # allowed values: hyberbolic (1/H2O)
+  Oslope <- 2.59226
+  Hslope <- 15.0711
+}
 
 ######################################################################################
 # User specified information on calibration standards - this example function
@@ -139,22 +156,10 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
       add.std.Dval[UD.stds] <- rep(UD.standard.DValue,length(UD.stds))
     }
 
-    if (!is.null(PZ.stds) & length(PZ.stds)>0) {
-      add.names[PZ.stds] <- rep(PZ.standard,length(PZ.stds))
-      add.std.Oval[PZ.stds] <- rep(PZ.standard.OValue,length(PZ.stds))
-      add.std.Dval[PZ.stds] <- rep(PZ.standard.DValue,length(PZ.stds))
-    }
-
-    if (!is.null(UT.stds) & length(UT.stds)>0) {
-      add.names[UT.stds] <- rep(UT.standard,length(UT.stds))
-      add.std.Oval[UT.stds] <- rep(UT.standard.OValue,length(UT.stds))
-      add.std.Dval[UT.stds] <- rep(UT.standard.DValue,length(UT.stds))
-    }
-
-    if (!is.null(FL.stds) & length(FL.stds)>0) {
-      add.names[FL.stds] <- rep(FL.standard,length(FL.stds))
-      add.std.Oval[FL.stds] <- rep(FL.standard.OValue,length(FL.stds))
-      add.std.Dval[FL.stds] <- rep(FL.standard.DValue,length(FL.stds))
+    if (!is.null(SPS.stds) & length(SPS.stds)>0) {
+      add.names[SPS.stds] <- rep(SPS.standard,length(SPS.stds))
+      add.std.Oval[SPS.stds] <- rep(SPS.standard.OValue,length(SPS.stds))
+      add.std.Dval[SPS.stds] <- rep(SPS.standard.DValue,length(SPS.stds))
     }
 
     # add columns to standard.data.frame
@@ -164,7 +169,9 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
     names(data)[names(data) == 'add.names'] <- 'standard.name'
     names(data)[names(data) == 'add.std.Oval'] <- 'standard.O18.VSMOW'
     names(data)[names(data) == 'add.std.Dval'] <- 'standard.H2.VSMOW'
-
+ 	
+ 	# return standard.data.frame
+    return(data)
   }
 }
 
