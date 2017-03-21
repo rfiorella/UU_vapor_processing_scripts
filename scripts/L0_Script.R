@@ -36,6 +36,7 @@ print(paste(Sys.time(),"Loading and compiling L0 functions..."))
 # LOAD USER OPTIONS
 ######################################################################################################################################
 source("../user/L0_user_specs.R")
+print(minimum.number.of.datapoints)
 ######################################################################################################################################
 # SET DATE LIMITS
 
@@ -98,7 +99,7 @@ for (i in 1:ndays) {
   file.inds.to.include <- pad.file.indices(files.within.day,raw.file.list,dbg.level=debug)
 
   # loop through log files for that particular day and concatenate
-  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list,useParallel=FALSE,dbg.level=debug)
+  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list,useParallel=TRUE,dbg.level=debug)
 
   # fix time variables for output - 2 fixes need to be made:
   # (1) there are several redundant time variables. remove extra ones.
@@ -126,7 +127,7 @@ for (i in 1:ndays) {
   amb.data.avgd <- reduce.ambient.data(amb.data,
     time.length.average=averaging.length.in.minutes,
     minimum.points.to.average=minimum.number.of.datapoints,
-    dbg.level=debug)
+    useParallel=TRUE,dbg.level=debug)
   
   # WRITE OUT DAILY FILES FOR BOTH AMBIENT DATA, CALIBRATION DATA.
   #-----------------------------------
@@ -136,7 +137,7 @@ for (i in 1:ndays) {
     if (nrow(amb.data.avgd) > 0) {
       print(paste(Sys.time()," Writing out ambient data file..."))
       aoutput.fname <- paste(path.to.output.L0.data,output.file.prefix,"_AmbientData_L0_",
-        date.to.process,"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
+        date.to.process,".dat",sep="")
 
       # attach metadata
       attach.L0.Header(aoutput.fname,metadata.frame)
@@ -154,7 +155,7 @@ for (i in 1:ndays) {
     print(paste(Sys.time()," Writing out calibration data frame..."))
     # generate output filename
     coutput.fname <- paste(path.to.output.L0.data,output.file.prefix,"_CalibData_L0_",
-        date.to.process,"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
+        date.to.process,".dat",sep="")
 
     # attach metadata
     attach.L0.Header(coutput.fname,metadata.frame)

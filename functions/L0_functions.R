@@ -428,12 +428,27 @@ attach.L0.Header.uncompiled <- function(output_filename,metadata_dataframe,dbg.l
 	sink(output_filename)
 	cat(paste("# ",nrow(metadata_dataframe)+4,"\n",sep=""))
 	cat("# BEGIN L0 HEADER \n")
+	
+	# most of the metadata for L0 is provided in a template...
+	# loop through rows in the template and add them to the header...
 	for (i in 1:nrow(metadata_dataframe)) {
     	cat(paste("# ",metadata_dataframe[i,1],", ",metadata_dataframe[i,2],"\n",sep=""))   	
 	}
+
+	# however, there are a few additional rows that should be added here:
+	# (1) when were scripts run?
 	cat(paste("# date.scripts.run, ",base::date(),"\n"))
 	# date.scripts.run flag modified on 2feb17 from date() to base:date() to avoid conflicts
 	# if the lubridate package is active.
+	
+	# (2) what user options were chosen in L0_user_specs.R? For L0, this
+	# really only applies to the reduce.ambient.data function.
+	cat(paste("# ambient data time resolution (in minutes), ",averaging.length.in.minutes,"\n"))
+	cat(paste("# data points in ambient time unit required to average, ",
+		minimum.number.of.datapoints,"\n"))
+	cat(paste("# calibration data time resolution (in minutes), " 1/70,"\n")) # hardcoded right now, no change! same as analyzer data resolution
+
+	# print that we've finished putting together the L0 header.
 	cat("# END L0 HEADER \n")
 	sink()
 
