@@ -43,7 +43,7 @@ extract.date.from.L1.files <- function(file.list,dbg.level=0) {
 }
 
 #------------------------------------------------------------------------------------------
-# ID.calib.breakpoints - finds indices in the input cailbration data frame where the
+# ID.calib.breakpoints - finds indices in the input calibration data frame where the
 # gap between points exceeds threshold number of seconds (default = 10 seconds)
 
 ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
@@ -73,7 +73,7 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
   # proposing a threshold here of 30 indices.
   tmp <- diff(out1)
 
-  ini.breaks <- out1[c(1e6,tmp)>30]
+  ini.breaks <- out1[c(1e6,tmp)>10]
 
   # print previous two vectors if requested by sufficiently high debug level
   if (dbg.level>1) {
@@ -95,7 +95,7 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
     tmp.splines <- smooth.spline(calibration.data.frame$EPOCH_TIME[ini.breaks[i]:(ini.breaks[i+1]-1)],
       calibration.data.frame$H2O[ini.breaks[i]:(ini.breaks[i+1]-1)],df=96,tol=1e-4)
     tmp.spline.deriv <- c(NA,diff(tmp.splines$y)) # initial NA required to keep vector same length.
-    print(tmp.spline.deriv)
+    # print(paste(i,max(tmp.spline.deriv)))
     # find indices where derivative is "exceedingly" far from zero
     tmp.inds <- which(abs(tmp.spline.deriv)>50) # 
     tmp.inds.diff <- c(NA,diff(tmp.inds)) # add initial NA to keep tmp.inds and tmp.inds.diff the same length
@@ -217,6 +217,7 @@ calculate.spline.derivatives <- function(spline.fits,breaks,dbg.level=0) {
     temp3 <- diff(spline.fits[[i]]$d2H)
     temp4 <- spline.fits[[i]]$time[2:(length(spline.fits[[i]]$time))] # keep time associated with the derivatives...
     temp5 <- (breaks[i]+1):(breaks[i+1]-1)
+    #temp5 <- temp4 # momentary kludge fix for debugging.
     temp6 <- c(NA,diff(temp1))
     temp7 <- c(NA,diff(temp2))
     temp8 <- c(NA,diff(temp3))
@@ -682,7 +683,7 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
 # in L1_Calibration_Parameters.R. Other regressions are possible for correcting for
 # concentration dependence, but have not be implemented in this code base yet.
 
-apply.mixingratio.correction.calibration <- function(avg.data.frame,dbg.level=0,fit.type,Oslope,Hslope) {
+apply.mixingratio.correction.calibration <- function(avg.data.frame,fit.type,Oslope,Hslope,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
@@ -699,7 +700,7 @@ apply.mixingratio.correction.calibration <- function(avg.data.frame,dbg.level=0,
     Delta_18_16_mrc <- Oslope*(1/20000-1/avg.data.frame$H2O.mean) + avg.data.frame$d18O.mean 
     Delta_D_H_mrc <- Hslope*(1/2000-1/avg.data.frame$H2O.mean) + avg.data.frame$d2H.mean
   } else if (fit.type=="logarithmic") { 
-    Delta_18_16_mrc <- O_slope*(log(1/20000,base=10)-log(1/avg.data.frame$H2O.mean,base=10)) +
+    Delta_18_16_mrc <- Oslope*(log(1/20000,base=10)-log(1/avg.data.frame$H2O.mean,base=10)) +
       avg.data.frame$d18O.mean
     Delta_D_H_mrc <- Hslope*(log(1/20000,base=10)-log(1/avg.data.frame$H2O.mean,base=10)) +
       avg.data.frame$d2H.mean
@@ -892,8 +893,6 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
     }
     # return the variables.
     return(output)
-
-
 
   }
 
