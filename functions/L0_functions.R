@@ -124,7 +124,7 @@ pad.file.indices <- cmpfun(pad.file.indices.uncompiled)
 # version, but it is terribly inefficient - speeds up overall script by
 # ~40%, but triples the computing resources required.
 
-concatenate.to.daily.uncompiled <- function(indices,date,file.list,useParallel=TRUE,dbg.level=0) {
+concatenate.to.daily.uncompiled <- function(indices,date,file.list,useParallel=FALSE,dbg.level=0) {
 	# print start of function statement...
 	if (dbg.level>0) {
 		print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
@@ -365,7 +365,12 @@ reduce.ambient.data.uncompiled <- function(ambient.data.frame,time.length.averag
 	  
 	  	if (useParallel==TRUE) {
 			# loop through times, find indices within each time window, and average variables over them
-			cl <- makeCluster(no_cores,"FORK")
+			cl <- makeCluster(no_cores)
+
+			# send variables from L0_user_specs.R to cluster...
+			clusterExport(cl=cl,varlist=c("minimum.number.of.datapoints"))
+			
+			# print that we're starting parallel loop
 			print(paste(Sys.time()," finding indices associated with each averaging period..."))
 			time.inds <- parLapply(cl,2:(length(time.averages.array)+1),get.time.indices)
 
@@ -376,7 +381,14 @@ reduce.ambient.data.uncompiled <- function(ambient.data.frame,time.length.averag
 			stopCluster(cl)
 
 	  	} else {
-	  		stop("No serial version of reduce.ambient.data has been written...")
+	  		print("Processing ambient data using serial code...")
+	  		time.inds <- vector("list",length(time.averages.array))
+	  		tmp.output <- vector("list",length(time.averages.array))
+
+	  		for (j in 1:length(time.averages.array)) {
+	  			time.inds[[j]] <- get.time.indices(j)
+	  			tmp.output[[j]] <- get.time.mean(j)
+	  		}
 	  	}
 
 	  	# bind rows together
