@@ -67,6 +67,12 @@ log.pct  <- vector()
 
 # initiate vector to hold data
 file.list.by.month <- vector("list",nmonths)
+
+# Get metadata from an L0 file in here to pass along to L1 header...
+tmp <- readLines(amb.file.list[[1]])
+
+md.frame <- tmp[grep("#",tmp)] # pull out lines starting with comment character...
+
 #-----------------------------------------------------------------------------
 # loop through months for calibration data.
 #-----------------------------------------------------------------------------
@@ -118,10 +124,10 @@ for (i in 1:nmonths) {
  		print(paste(now()," Writing out calibration data frame..."))
  		# generate output filename
  		coutput.fname <- paste(path.to.output.L1.data,output.file.prefix,"_CalibData_L1_",
- 	  	  (start.date %m+% months(i-1)),"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
+ 	  	  (start.date %m+% months(i-1)),".dat",sep="")
 
  		# attach metadata
- 		attach.L0.Header(coutput.fname,metadata.frame,dbg.level=debug)
+ 		attach.L1.Header(coutput.fname,md.frame,dbg.level=debug)
 
  		# write out data portion of the data file.
  		write.table(mondata.filtered$data,file=coutput.fname,sep=",",append = TRUE,row.names=FALSE)
@@ -199,10 +205,10 @@ for (i in 1:nmonths) {
  		print(paste(now()," Writing out ambient data frame..."))
  		# generate output filename
  		coutput.fname <- paste(path.to.output.L1.data,output.file.prefix,"_AmbientData_L1_",
- 	  	  (start.date %m+% months(i-1)),"_",metadata.frame$Value[metadata.frame$Variable=="code.version"],".dat",sep="")
+ 	  	  (start.date %m+% months(i-1)),".dat",sep="")
 
  		# attach metadata
- 		attach.L0.Header(coutput.fname,metadata.frame,dbg.level=debug)
+ 		attach.L1.Header(coutput.fname,md.frame,dbg.level=debug)
 
  		# write out data portion of the data file.
  		write.table(mondata.pcfilter,file=coutput.fname,sep=",",append = TRUE,row.names=FALSE)
