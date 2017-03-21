@@ -1,0 +1,10 @@
+# ignore macOS spotlight indexing files, other system files
+*.DS_Store
+
+# ignore R history files
+.Rhistory
+.Rapp.history
+
+# ignore anything with internal in it - these are for UU specific application/development
+internal*
+data_sync/
