@@ -230,7 +230,6 @@ attach.L0.Header.uncompiled <- function(output_filename,metadata_dataframe,dbg.l
     print("================================")
   }
 
-
 }
 
 # compile the function
@@ -250,18 +249,24 @@ post.calibration.filter <- function(qcchecked.data.frame,dbg.level=0) {
     print("starting post.calibration.filter function")
   }
 
-  # calculate some derivatives, though might not use all of them...
-  time.diff <- diff(qcchecked.data.frame$EPOCH_TIME)
-  h2o.diff <- diff(qcchecked.data.frame$H2O)
-  d18O.diff <- diff(qcchecked.data.frame$Delta_18_16)
-  d2H.diff <- diff(qcchecked.data.frame$Delta_D_H)
+  # first, find where the calibration periods are...
+  ind.after.calib <- which(diff(qcchecked.data.frame$EPOCH_TIME)>120) + 1
 
-  # apply a filter. removing where |h2o.diff| > 1000
-  # seems to be a good first start.
-  filter.pass.inds <- which(abs(h2o.diff)<1000) + 1 # add 1 due to how diff works!!!
+  # identify point 15 minutes later...
+  end.calib.memory.period <- ind.after.calib + 30 # note: THIS ASSUMES USING 1 MINUTE AVERAGES!!!!
 
+  # loop through create a list of indices corresponding to this and remove...
+  inds.to.remove.list <- vector("list",length(ind.after.calib))
+
+  for (i in 1:length(ind.after.calib)) { 
+    inds.to.remove.list[[i]] <- seq(ind.after.calib[[i]],end.calib.memory.period[[i]],1)
+  }
+
+  inds.to.remove <- unlist(inds.to.remove.list)
+
+  print(length(inds.to.remove)/nrow(qcchecked.data.frame))
   # omit these rows and return the data frame...
-  output <- qcchecked.data.frame[filter.pass.inds,]
+  output <- qcchecked.data.frame[-inds.to.remove,]
 
   # return the output
   return(output)
