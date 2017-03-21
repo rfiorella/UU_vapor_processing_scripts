@@ -205,35 +205,43 @@ data.sanity.check <- cmpfun(data.sanity.check.uncompiled)
 # this function creates the header for datafiles and attaches the metadata
 # loaded into a csv file.
 
-attach.L0.Header.uncompiled <- function(output_filename,metadata_dataframe,dbg.level=0) {
+attach.L1.Header.uncompiled <- function(output_filename,metadata_dataframe,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("==================================")
-    print("starting attach.L0.Header function")
+    print("starting attach.L1.Header function")
   }
 
+  # initiate writing out to output file...
   sink(output_filename)
-  cat(paste("# ",nrow(metadata_dataframe)+4,"\n",sep=""))
-  cat("# BEGIN HEADER \n")
-  for (i in 1:nrow(metadata_dataframe)) {
-    	cat(paste("# ",metadata_dataframe[i,1],", ",metadata_dataframe[i,2],"\n",sep=""))   	
-  }
-  cat(paste("# date.scripts.run, ",base::date(),"\n"))
-  # date.scripts.run flag modified on 2feb17 from date() to base:date() to avoid conflicts
-  # if the lubridate package is active.
-  cat("# END HEADER \n")
-  sink()
 
+  # add L1 information to top of output file...
+  cat("# BEGIN L1 HEADER \n")
+
+  # note when L1 script was run
+  cat(paste("# date.L1.scripts.run, ",base::date(),"\n"))
+  
+  # close L1 header
+  cat("# END L1 HEADER \n")
+
+  # append L0 header.
+  # loop through existing L0 header and paste below L1 header.
+  for (i in 1:length(metadata_dataframe)) {
+    cat(paste(metadata_dataframe[i],"\n")) 
+  }
+
+  # turn off output
+  sink()
+  
   # print statment denoting the end of this function
   if (dbg.level>0) {
-    print("ending attach.L0.Header function")
+    print("ending attach.L1.Header function")
     print("================================")
   }
-
 }
 
 # compile the function
-attach.L0.Header <- cmpfun(attach.L0.Header.uncompiled)
+attach.L1.Header <- cmpfun(attach.L1.Header.uncompiled)
 
 #----------------------------------------------------
 # create post.calibration.filter function
