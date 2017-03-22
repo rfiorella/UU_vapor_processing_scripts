@@ -2,32 +2,41 @@
 # rich fiorella, 15mar17.
 
 # this file contains all of the parameters that need to be specified for the L2 data processing script.
+# NOTE: this is long because there are a lot design choices that needed to be made, and choices that
+# I made for my data might not apply for other users!! Please take some time to read through this script 
+# and ensure that these choices make sense for your setup as well!
 
-# 1. what dates should we process? script works sequentially on dates from startdate to enddate.
+###################################################################
+# SECTION 1: Dates to run, data location, include debugging?
+
+# 1a. what dates should we process? script works sequentially on dates from startdate to enddate.
 
 start.date <- ymd("2016-12-01")
-end.date <- ymd("2017-02-01")
+end.date <- ymd("2017-03-01")
 
-# 2. where is the data we're processing? and where should we save output data?
+# 1b. where is the data we're processing? and where should we save output data?
 path.to.L1.data <- "~/VaporData/SBD_VAPOR/L1/testing/"
 path.to.output.L2.data <-  "~/VaporData/SBD_VAPOR/L2/WBB_SBD_comp/"
 
-# 3. what do we call the output data? file name will have the format of:
+# 1c. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
 output.file.prefix <- "SBD_Water_Vapor"
 
-# 4. should we run diagnostic plots? (logical value)
+# 1d. should we run diagnostic plots? (logical value)
 RUN_PLOTS <- "TRUE"
 
-# 5. Is debugging necessary? This parameter will help determine why code is crashing.
+# 1e. Is debugging necessary? This parameter will help determine why code is crashing.
 debug <- 1
 
-# 6. What is the dependence of delta on humidity for this analyzer? 
+###################################################################
+# SECTION 2: Information specific to the analyzer
+
+# 2a. What is the dependence of delta on humidity for this analyzer? 
 # correction is implemented in point-slope formula in the following way
 # delta(@20000ppm) = slope*(1/20000-1/measured.H2O) + measured.delta
 
 # set site...
-site <- "WBB"
+site <- "Snowbird"
 
 if (site=="WBB") {
   fit.type <- "hyperbolic" # allowed values: hyperbolic (1/H2O)
@@ -39,14 +48,10 @@ if (site=="WBB") {
   Hslope <- 15.0711
 }
 
-######################################################################################
+# 2b. This is a long one - and one that hopefully can be shortened in future.
 # User specified information on calibration standards - this example function
 # has the information for our two analyzers at WBB and @ Snowbird. this will have
 # to be modified for your site!!
-
-
-## UU Specific Example!
-site <- "Snowbird"
 
 assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) {
   if (site=="WBB") {
@@ -121,15 +126,15 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
 
   } else if (site=="Snowbird") { 
     # overwrite O break and H break for SBD
-    O.break <- -30
-    H.break <- -200
+    O18.break <- -30
+    H2.break <- -200
 
     # need to assign standard names and d18O, dD values (VSMOW) based on 
     # corrected concentrations.
     # first, break into subsets based on compositions
 
-    SPS.stds <- which(data$Delta_18_16_bgc > O18.break)
-    UD.stds <- which(data$Delta_18_16_bgc <= O18.break)
+    SPS.stds <- which(data$Delta_18_16_bgc < O18.break)
+    UD.stds <- which(data$Delta_18_16_bgc >= O18.break)
 
     # assign standard name/values
 
@@ -175,12 +180,63 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
   }
 }
 
-######################################################################################################################################
-# SET METADATA
-# write out metadata to help data curation - these will be appended to the top of the data files currently. it might be possible in
-# later versions to use this to write out an xml file?
-######################################################################################################################################
+###################################################################
+# SECTION 3: Script design decisions that determine: what is a good
+# standard peak? what exclusion criteria do we use? what amount of
+# water vapor do we assume makes it through a drierite column? etc.
 
-metadata.frame <- read.csv("../metadata_templates/L0_WBB_metadata.csv",header=TRUE)
+# this section is organized by what function in L2_Script.R and L2_functions.R
+# is being referenced by individual parameters.
 
-# Note: several variables left to port here, including: (a) spline parameters, (b) filtering info for standards
+# ID.calib.breakpoints function ------
+time.threshold <- 10 # time in seconds.
+# meaning: what amount of time passing between two adjacenet
+# calibration rows in the data frame should be used to divide
+# the data into separate analyses? This number could presumably
+# be a bit larger than 10, but there's also no reason it shouldn't
+# be this short in most cases...
+
+# fit.calibration.splines function -------
+stiff.spline.dfs <- 12 # number of degrees of freedom in "stiff" splines fit to data - 
+                       # seeking a value here that will allow for "minor" hiccups in the
+                       # data (e.g., a sufficiently small air bubble or the like), but
+                       # catch larger excursions in the data.
+
+# extact.stable.calib.indices function ------------
+# this function IDs which points in the identified peaks are "stable"
+# by selecting only the points where the derivative of the spline created
+# in fit.calibration.splines is below each of the following thresholds:
+# IMPORTANT NOTE: IF YOU CHANGE STIFF.SPLINE.DFS YOU *MUST* RECHECK THESE
+# DERIVATIVES - THEY ARE TUNED BASED ON A VALUE OF 12!
+
+H2O.thres <- 5.0
+d18O.thres <- 0.01
+d2H.thres <- 0.1
+
+# calculate.standard.averages function -------------
+
+# 1. should we attempt to limit the effect of instrumental memory?
+# built in function sequentially throws out 10% of data at the beginning
+# of peak until the estimated trend magnitude (permil/min) is less than 
+# 0.1 for d18O and 0.5 for d2H, or 80% of the data has been removed. 
+memory.filter <- TRUE 
+
+# future task: pull out maximum slopes allowed as a user variable right here...
+
+# future task 2 : pull out maximum allowed values for peaks here...
+
+# apply.mixingratio.correction ------------
+# parameters already included in section 2!
+
+# apply.drygas.correction -----------------
+
+do.correction <- TRUE # set to true if using drierite, can set to false otherwise and keep same data structure
+                      # not yet implemented, so this switch currently has no effect.
+
+H2O.bg <- 250 # integer - what ppmv concentration of H2O assumed to get through column?
+
+include.gypsum.fractionation <- FALSE 
+# additional second-order adjustment to vapor making it through column by 
+# including influence of gypsum hydration water fractionation factors onto
+# the column. Not yet implemented, so this switch currently has no effect.
+

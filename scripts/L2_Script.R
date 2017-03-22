@@ -120,7 +120,7 @@ for (i in 1:nmonths) {
 	# identify breakpoints
 	breaks <- ID.calib.breakpoints(calib.data,dbg.level=debug)
 
-	# calculate initial set of splines as a check on breaks
+	# # calculate initial set of splines as a check on breaks
 	spline.fits <- fit.calibration.splines(calib.data,breaks,dbg.level=debug)
 	
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -146,12 +146,13 @@ for (i in 1:nmonths) {
     }
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	# now that we have nice smooth splines, estimate derivatives...
-	spline.derivatives <- calculate.spline.derivatives(spline.fits,breaks,dbg.level=debug)
 
-    #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    # DIAGNOSTIC PLOT 2: plot the first derivative of each identified peak period
-    # to help identify suitable thresholds for identifying stable portions of peaks.
+# 	# now that we have nice smooth splines, estimate derivatives...
+ 	spline.derivatives <- calculate.spline.derivatives(spline.fits,breaks,dbg.level=debug)
+
+#     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     # DIAGNOSTIC PLOT 2: plot the first derivative of each identified peak period
+#     # to help identify suitable thresholds for identifying stable portions of peaks.
 
     if (RUN_PLOTS) {
         print("Making plot of spline derivatives...")
@@ -169,7 +170,7 @@ for (i in 1:nmonths) {
         dev.off() 
     }
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    
+   
 	# based on threshold values calculate list of indices to keep from each peak
 	good.inds <- extract.stable.calib.indices(spline.derivatives,dbg.level=debug)
 
@@ -462,10 +463,12 @@ ambient.bracket.all <- do.call(rbind,ambient.buffers)
 calib.averages.wamb <- cbind(calib.averages.all,ambient.bracket.all)
 
 # correct for delta dependence on concentration
-calib.averages.wamb.mrc <- apply.mixingratio.correction.calibration(calib.averages.wamb,dbg.level=debug)
+calib.averages.wamb.mrc <- apply.mixingratio.correction(calib.averages.wamb,fit.type,Oslope,Hslope,
+    dbg.level=debug)
 
 # correct standard values for vapor bleeding through drierite canister...
-calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc,dbg.level=debug)
+calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc,h2o.bg,
+    include.gypsum.fractionation,dbg.level=debug)
 
 # assign standard names to each calibration period
 calib.averages.wamb.mrc.bgc.wstds <- assign.standard.names.and.values(calib.averages.wamb.mrc.bgc)
@@ -479,7 +482,7 @@ calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bg
 print(paste("Saving calibration data in two separate files"))
 print(paste("The first - save all the information about each identified calibration data point..."))
 
-calib.dt.name <- paste(path.to.output.L2.data,"WBB_Water_Vapor_CalibrationAverages_L2_",
+calib.dt.name <- paste(path.to.output.L2.data,"SBD_Water_Vapor_CalibrationAverages_L2_",
     start.date,"_",end.date,".dat",sep="")
 
 # write out data table of calib.averages.wamb.mrc.bgc.wstds
@@ -489,18 +492,20 @@ write.table(calib.averages.wamb.mrc.bgc.wstds,file=calib.dt.name,
 # ok, now write out the data file that contains the regression parameters...
 print(paste("The second - save the regression parameters for each period..."))
 
-regress.dt.name <- paste(path.to.output.L2.data,"WBB_Water_Vapor_CalibrationRegressionData_L2_",
+regress.dt.name <- paste(path.to.output.L2.data,"SBD_Water_Vapor_CalibrationRegressionData_L2_",
     start.date,"_",end.date,".dat",sep="")
 
 write.table(calibration.regressions,file=regress.dt.name,sep=",",row.names=FALSE)
 
 # make a couple quick diagnostic plots of regression parameters
 quartz()
-par(mfrow=c(2,1))
+par(mfrow=c(3,1),mar=c(4,4,0.5,0.5))
 plot(calibration.regressions$start.time,calibration.regressions$O.slope)
 plot(calibration.regressions$start.time,calibration.regressions$O.intercept,col="red")
+plot(calibration.regressions$start.time,calibration.regressions$O.r2,col="blue")
 
 quartz()
-par(mfrow=c(2,1))
+par(mfrow=c(3,1),mar=c(4,4,0.5,0.5))
 plot(calibration.regressions$start.time,calibration.regressions$H.slope)
 plot(calibration.regressions$start.time,calibration.regressions$H.intercept,col="green")
+plot(calibration.regressions$start.time,calibration.regressions$H.r2,col="blue")

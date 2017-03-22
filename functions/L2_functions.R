@@ -93,7 +93,7 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
   # data...
   for (i in 1:(length(ini.breaks)-1)) {
     tmp.splines <- smooth.spline(calibration.data.frame$EPOCH_TIME[ini.breaks[i]:(ini.breaks[i+1]-1)],
-      calibration.data.frame$H2O[ini.breaks[i]:(ini.breaks[i+1]-1)],df=96,tol=1e-4)
+      calibration.data.frame$H2O[ini.breaks[i]:(ini.breaks[i+1]-1)],df=96)
     tmp.spline.deriv <- c(NA,diff(tmp.splines$y)) # initial NA required to keep vector same length.
     # print(paste(i,max(tmp.spline.deriv)))
     # find indices where derivative is "exceedingly" far from zero
@@ -140,7 +140,7 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
 #------------------------------------------------------------------------------------------
 # fit.calibration.splines - fits a smooth spline to each identified calibration period.
 
-fit.calibration.splines <- function(calibration.data.frame,breakpoints,dfree=12,tolerance=1e-4,dbg.level=0) {
+fit.calibration.splines <- function(calibration.data.frame,breakpoints,dfree=12,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("*****************************************")
@@ -164,13 +164,13 @@ fit.calibration.splines <- function(calibration.data.frame,breakpoints,dfree=12,
     # fit splines.
     #print(i)
     H2O.spline.fits <- smooth.spline(calibration.data.frame$EPOCH_TIME[(breakpoints[i]):(breakpoints[i+1]-1)],
-      calibration.data.frame$H2O[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree,tol=tolerance)
+      calibration.data.frame$H2O[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree)
     #print(i)
     d18O.spline.fits <- smooth.spline(calibration.data.frame$EPOCH_TIME[(breakpoints[i]):(breakpoints[i+1]-1)],
-      calibration.data.frame$Delta_18_16[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree,tol=tolerance)
+      calibration.data.frame$Delta_18_16[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree)
     #print(i)
     d2H.spline.fits <- smooth.spline(calibration.data.frame$EPOCH_TIME[(breakpoints[i]):(breakpoints[i+1]-1)],
-      calibration.data.frame$Delta_D_H[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree,tol=tolerance)
+      calibration.data.frame$Delta_D_H[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree)
     # extract y value from splines, x value from 1 spline (should all be the same x values!)
     temp1 <- H2O.spline.fits$x
     temp2 <- H2O.spline.fits$y
@@ -321,71 +321,7 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
 
   for (i in 1:length(retained.indices)) {
     if (memory.filter==TRUE) {
-      #print("attempting to filter out for memory effects...")
-      
-      # ## OLD, NONFUNCTIONAL MEMORY CORRECTION
-      # # divide data into ~minute chunks
-      # chunk_size <- 210
-      # chunks <- length(retained.indices[[i]])%/%chunk_size + 1 # ~70 data points per minute, so how many divisions?
-      # # if there's an incomplete one, we need to add an additional chunk.
-      # if (length(retained.indices[[i]])%%chunk_size == 0) { chunks <- chunks + 1}
-      # # create a vector to hold logical if chunk should be kept.
-      # keep.chunk <- vector("logical",chunks)
-
-      # mem.count <- 0
-      # #print(retained.indices[[i]])
-      # for (j in 1:(chunks)) {
-      #   test.inds <- retained.indices[[i]][(chunk_size*(j-1)+1):min(c(chunk_size*j,length(retained.indices[[i]])),na.rm=TRUE)]
-        
-      #   #print(test.inds)
-      #   print(paste(i,j,chunks,length(test.inds)))
-      #   # remove any randomly missing values...
-      #   #d18O.temp <- !is.na(calib.data$Delta_18_16[test.inds])
-      #   # run a linear model for that chunk...
-        
-      #   # rescale time variable to make it on the same order as delta
-      #   time <- calib.data$EPOCH_TIME[test.inds]-calib.data$EPOCH_TIME[test.inds[1]]
-
-      #   Omod <- lm(calib.data$Delta_18_16[test.inds] ~ time)
-      #   Hmod <- lm(calib.data$Delta_D_H[test.inds] ~ time)
-    
-      #   Oslope <- 60*coef(Omod)[[2]] # convert from permil/s to permil/min
-      #   Orsqrd <- summary(Omod)$r.squared
-
-      #   Hslope <- 60*coef(Hmod)[[2]]
-      #   Hrsqrd <- summary(Hmod)$r.squared
-
-      #   # print(summary(Hmod))
-      #   # print(summary(Omod))
-      #   print(paste(Oslope,Orsqrd,Hslope,Hrsqrd))
-      #   # should we keep this chunk?
-      #   if (is.na(Oslope) | is.na(Hslope)) {
-      #     keep.chunk[j] <- FALSE
-      #   } else if (Oslope > 0.1 | Hslope > 0.3) {
-      #     keep.chunk[j] <- FALSE
-      #   } else {
-      #     keep.chunk[j] <- TRUE
-      #   }
-      #   rm(test.inds)
-      # }
-      # # print(keep.chunk)
-      # # find LAST FALSE value.
-      # if (any(keep.chunk)==FALSE) {
-      #   new.start <- max(which(keep.chunk==FALSE)) + 1 # start at index of next chunk after last false value
-      #   mem.count <- mem.count + 1 
-      #   # print(new.start)
-      # } else if (all(keep.chunk)==FALSE) {
-      #   next
-      # } else {
-      #   new.start <- 0
-      # }
-
-      # print(paste((1+chunk_size*new.start),length(retained.indices[[i]])))
-      # mem.retained.inds <- retained.indices[[i]][(1+chunk_size*new.start):length(retained.indices[[i]])]
-      # # remove induced NA
-      # mem.retained.inds <- mem.retained.inds[!is.na(mem.retained.inds)]
-      # #print(mem.retained.inds)
-
+      print("attempting to filter out for memory effects...")
       # --------------------------
       # NEW MEMORY CORRECTION
 
@@ -683,7 +619,7 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
 # in L1_Calibration_Parameters.R. Other regressions are possible for correcting for
 # concentration dependence, but have not be implemented in this code base yet.
 
-apply.mixingratio.correction.calibration <- function(avg.data.frame,fit.type,Oslope,Hslope,dbg.level=0) {
+apply.mixingratio.correction <- function(avg.data.frame,fit.type,Oslope,Hslope,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
@@ -724,7 +660,7 @@ apply.mixingratio.correction.calibration <- function(avg.data.frame,fit.type,Osl
 #-----------------------------------------------------------------------------------
 # apply.drygas.correction function - corrected now that ambient data is already in data frame.
 
-apply.drygas.correction <- function(data,H2O.bg=250,dbg.level=0) {
+apply.drygas.correction <- function(data,do.correction=TRUE,H2O.bg,include.gypsum.fractionation,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
