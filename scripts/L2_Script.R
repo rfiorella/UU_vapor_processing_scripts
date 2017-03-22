@@ -76,6 +76,12 @@ log.calibavgs <- vector("numeric",nmonths)
 fcount <- 1
 gcount <- 1 # perhaps not necessary, but coding defensively here in a rush...
 
+# SET UP METADATA HEADERS
+# Get metadata from an L1 file in here to pass along to L2 header...
+tmp <- readLines(raw.file.list[[1]]) # get first calibration file.
+
+md.frame <- tmp[grep("#",tmp)] # pull out lines starting with comment character...
+
 # OK, after setting up everything, start looping through the months requested...
 for (i in 1:nmonths) {
 	# print status header.
@@ -485,9 +491,12 @@ print(paste("The first - save all the information about each identified calibrat
 calib.dt.name <- paste(path.to.output.L2.data,"SBD_Water_Vapor_CalibrationAverages_L2_",
     start.date,"_",end.date,".dat",sep="")
 
+# attach metadata
+attach.L2.Header(calib.dt.name,md.frame,dbg.level=debug)
+
 # write out data table of calib.averages.wamb.mrc.bgc.wstds
 write.table(calib.averages.wamb.mrc.bgc.wstds,file=calib.dt.name,
-    sep=",",row.names=FALSE)
+    sep=",",row.names=FALSE,append=TRUE)
 
 # ok, now write out the data file that contains the regression parameters...
 print(paste("The second - save the regression parameters for each period..."))
@@ -495,7 +504,11 @@ print(paste("The second - save the regression parameters for each period..."))
 regress.dt.name <- paste(path.to.output.L2.data,"SBD_Water_Vapor_CalibrationRegressionData_L2_",
     start.date,"_",end.date,".dat",sep="")
 
-write.table(calibration.regressions,file=regress.dt.name,sep=",",row.names=FALSE)
+# attach metadata
+attach.L2.Header(regress.dt.name,md.frame,dbg.level=debug)
+
+# write out datatable.
+write.table(calibration.regressions,file=regress.dt.name,sep=",",row.names=FALSE,append=TRUE)
 
 # make a couple quick diagnostic plots of regression parameters
 quartz()

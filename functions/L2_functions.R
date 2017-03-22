@@ -837,5 +837,62 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
     print("ending correct.standards.to.VSMOW function")
     print("==========================================")
   }
-
 }
+
+#----------------------------------------------------
+# create attach.L2.Header function
+# this function creates the header for datafiles and attaches the metadata
+# loaded into a csv file.
+
+attach.L2.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("==================================")
+    print("starting attach.L1.Header function")
+  }
+
+  # initiate writing out to output file...
+  sink(output_filename)
+
+  # add L1 information to top of output file...
+  cat("# BEGIN L2 HEADER \n")
+
+  # note when L1 script was run
+  cat(paste("# date.L2.scripts.run, ",base::date(),"\n"))
+  cat(paste("# time.threshold.for.separate.standard.runs, ",time.threshold,"\n"))
+  cat(paste("# stiff.spline.dfs, ",stiff.spline.dfs,"\n"))
+  cat(paste("# spline.derivative.H2O.threshold (ppm/sec), ",H2O.thres,"\n"))
+  cat(paste("# spline.derivative.d18O.threshold (permil/sec), ",d18O.thres,"\n"))
+  cat(paste("# spline.derivative.d2H.threshold (permil/sec), ",d2H.thres,"\n"))
+  cat(paste("# memory.filter.on to calculate averages, ",memory.filter,"\n"))
+  cat(paste("# dry.gas.correction.applied, ",do.correction,"\n"))
+  if (do.correction==TRUE) {
+    cat(paste("# background H2O assumed, ",H2O.bg,"\n"))
+    cat(paste("# gypsum fractionation included in drierite correction, ",include.gypsum.fractionation,"\n"))
+  }
+  cat(paste("# humidity correction fit type, ",fit.type,"\n"))
+  cat(paste("# humidity correction oxygen slope, ",Oslope, "\n"))
+  cat(paste("# humidity correction hydrogen slope, ",Hslope,"\n"))
+
+  # future dev: include information about standard? probably not necessary since this is included
+  # in output variables.
+
+  # close L1 header
+  cat("# END L2 HEADER \n")
+
+  # append L0/L1 headers.
+  # loop through existing headers and paste below L2 header.
+  for (i in 1:length(metadata_dataframe)) {
+    cat(paste(metadata_dataframe[i],"\n")) 
+  }
+
+  # turn off output
+  sink()
+  
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending attach.L2.Header function")
+    print("================================")
+  }
+}
+
