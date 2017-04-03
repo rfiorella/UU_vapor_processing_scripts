@@ -239,9 +239,9 @@ for (i in 1:nmonths) {
         if (length(calib.avgs) > 0) { # i : months
             if (!is.null(calib.avgs[[i]]) == TRUE & length(calib.avgs[[i]]) > 0) {
                 # start separate counter
-                j <- 1
-                z <- 1
-                for (k in 1:length(spline.fits)) { # k loops through spline.fits in month i
+                yy <- 1
+                zz <- 1
+                for (xx in 1:length(spline.fits)) { # k loops through spline.fits in month i
                     # problem with straightaway plotting this: length of spline.fits[[k]] and good.inds[[k]]
                     # is NOT the same if points are removed through the filter.
                     # keep a separate counter for good.inds rather than spline fits.
@@ -261,16 +261,16 @@ for (i in 1:nmonths) {
                     # inds returned, and j refers to the peaks with good inds that pass the filter.
                     # in general, the maximums of these indices should follow this rule: k >= z >= j.
 
-                    tmpmin <- min(spline.fits[[k]]$time)
-                    tmpmax <- max(spline.fits[[k]]$time)
+                    tmpmin <- min(spline.fits[[xx]]$time)
+                    tmpmax <- max(spline.fits[[xx]]$time)
                     # screen for NA in gimean...
-                    gimean <- ifelse(all(is.na(good.inds[[z]])),NA,
-                        mean(calib.data$EPOCH_TIME[good.inds[[z]]],na.rm=TRUE))
-                    camean <- calib.avgs[[i]]$time.mean[j]
+                    gimean <- ifelse(all(is.na(good.inds[[zz]])),NA,
+                        mean(calib.data$EPOCH_TIME[good.inds[[zz]]],na.rm=TRUE))
+                    camean <- calib.avgs[[i]]$time.mean[yy]
 
-                    # print(paste(j,z,k))
-                    # print(paste(tmpmin,tmpmax,calib.avgs[[i]]$time.mean[j]))
-                    # print(paste(tmpmin,tmpmax,gimean))
+                    print(paste(xx,yy,zz))
+                    print(paste(tmpmin,tmpmax,calib.avgs[[i]]$time.mean[yy]))
+                    print(paste(tmpmin,tmpmax,gimean))
 
                     # first test: was a peak found?
                     #print(paste(j,z,k,tmpmin,tmpmax,gimean,camean))
@@ -294,62 +294,64 @@ for (i in 1:nmonths) {
 
                     # finally make plots.
                     if (spline.has.data==TRUE & spline.has.good.data==TRUE) {
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O,
-                            ylim=c(min(c(min(spline.fits[[k]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$H2O[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                         mtext(paste("Mean: ",round(calib.avgs[[i]]$H2O.mean[j],2),
-                             " stdev: ",round(calib.avgs[[i]]$H2O.sd[j],2)),side=1,line=-2)
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$H2O,
+                            ylim=c(min(c(min(spline.fits[[xx]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[zz]]],na.rm=TRUE))),
+                            max(c(max(spline.fits[[xx]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[zz]]],na.rm=TRUE)))))
+                        points(calib.data$EPOCH_TIME[good.inds[[zz]]],
+                            calib.data$H2O[good.inds[[zz]]],col=ifelse(xx%%8 != 0, mycols[xx%%8], mycols[8]))
+                         mtext(paste("Mean: ",round(calib.avgs[[i]]$H2O.mean[yy],2),
+                             " stdev: ",round(calib.avgs[[i]]$H2O.sd[yy],2)),side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O,
-                            ylim=c(min(c(min(spline.fits[[k]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_18_16[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                        mtext(paste("Mean: ",round(calib.avgs[[i]]$d18O.mean[j],2)," stdev: ",round(calib.avgs[[i]]$d18O.sd[j],2)),side=1,line=-2)
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$d18O,
+                            ylim=c(min(c(min(spline.fits[[xx]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[zz]]],na.rm=TRUE))),
+                            max(c(max(spline.fits[[xx]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[zz]]],na.rm=TRUE)))))
+                        points(calib.data$EPOCH_TIME[good.inds[[zz]]],
+                            calib.data$Delta_18_16[good.inds[[zz]]],col=ifelse(xx%%8 != 0, mycols[xx%%8], mycols[8]))
+                        mtext(paste("Mean: ",round(calib.avgs[[i]]$d18O.mean[yy],2)," stdev: ",round(calib.avgs[[i]]$d18O.sd[yy],2)),side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H,
-                            ylim=c(min(c(min(spline.fits[[k]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_D_H[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
-                        mtext(paste("Mean: ",round(calib.avgs[[i]]$d2H.mean[j],2)," stdev: ",round(calib.avgs[[i]]$d2H.sd[j],2)),side=1,line=-2)
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$d2H,
+                            ylim=c(min(c(min(spline.fits[[xx]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[zz]]],na.rm=TRUE))),
+                            max(c(max(spline.fits[[xx]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[zz]]],na.rm=TRUE)))))
+                        points(calib.data$EPOCH_TIME[good.inds[[zz]]],
+                            calib.data$Delta_D_H[good.inds[[zz]]],col=ifelse(xx%%8 != 0, mycols[xx%%8], mycols[8]))
+                        mtext(paste("Mean: ",round(calib.avgs[[i]]$d2H.mean[yy],2)," stdev: ",round(calib.avgs[[i]]$d2H.sd[yy],2)),side=1,line=-2)
+                    
                     } else if (spline.has.data==TRUE & spline.has.good.data==FALSE) { # spline has data, but fails filter tests.
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O,
-                            ylim=c(min(c(min(spline.fits[[k]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$H2O[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$H2O,
+                            ylim=c(min(c(min(spline.fits[[xx]]$H2O,na.rm=TRUE),min(calib.data$H2O[good.inds[[zz]]],na.rm=TRUE))),
+                            max(c(max(spline.fits[[xx]]$H2O,na.rm=TRUE),max(calib.data$H2O[good.inds[[zz]]],na.rm=TRUE)))))
+                        points(calib.data$EPOCH_TIME[good.inds[[zz]]],
+                            calib.data$H2O[good.inds[[zz]]],col=ifelse(xx%%8 != 0, mycols[xx%%8], mycols[8]))
                          mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O,
-                            ylim=c(min(c(min(spline.fits[[k]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_18_16[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$d18O,
+                            ylim=c(min(c(min(spline.fits[[xx]]$d18O,na.rm=TRUE),min(calib.data$Delta_18_16[good.inds[[zz]]],na.rm=TRUE))),
+                            max(c(max(spline.fits[[xx]]$d18O,na.rm=TRUE),max(calib.data$Delta_18_16[good.inds[[zz]]],na.rm=TRUE)))))
+                        points(calib.data$EPOCH_TIME[good.inds[[zz]]],
+                            calib.data$Delta_18_16[good.inds[[zz]]],col=ifelse(xx%%8 != 0, mycols[xx%%8], mycols[8]))
                         mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H,
-                            ylim=c(min(c(min(spline.fits[[k]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE))),
-                            max(c(max(spline.fits[[k]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[z]]],na.rm=TRUE)))))
-                        points(calib.data$EPOCH_TIME[good.inds[[z]]],
-                            calib.data$Delta_D_H[good.inds[[z]]],col=ifelse(k%%8 != 0, mycols[k%%8], mycols[8]))
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$d2H,
+                            ylim=c(min(c(min(spline.fits[[xx]]$d2H,na.rm=TRUE),min(calib.data$Delta_D_H[good.inds[[zz]]],na.rm=TRUE))),
+                            max(c(max(spline.fits[[xx]]$d2H,na.rm=TRUE),max(calib.data$Delta_D_H[good.inds[[zz]]],na.rm=TRUE)))))
+                        points(calib.data$EPOCH_TIME[good.inds[[zz]]],
+                            calib.data$Delta_D_H[good.inds[[zz]]],col=ifelse(xx%%8 != 0, mycols[xx%%8], mycols[8]))
                         mtext("Peak fails test in calculate.standard.averages fn",side=1,line=-2)
                     } else { # if spline returns no good data!
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$H2O)
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$H2O)
                         mtext("No acceptable peak found!",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d18O)
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$d18O)
                         mtext("No acceptable peak found!",side=1,line=-2)
 
-                        plot(spline.fits[[k]]$time,spline.fits[[k]]$d2H)
+                        plot(spline.fits[[xx]]$time,spline.fits[[xx]]$d2H)
                         mtext("No acceptable peak found!",side=1,line=-2)
                     }
                         title(paste("Spline selected points for : ",time.suffix),outer=TRUE)
                 # increment z and j as necessary
-                if (spline.has.data==TRUE) {z <- min(c(z+1,length(good.inds)))}
-                if (spline.has.good.data==TRUE) {j <- min(c(j+1,nrow(calib.avgs[[i]])))}
+                if (spline.has.data==TRUE | (is.na(gimean))) {zz <- min(c(zz+1,length(good.inds)))}
+                if (spline.has.good.data==TRUE) {yy <- min(c(yy+1,nrow(calib.avgs[[i]])))}
+
                 }
                 dev.off()
             } else { print("skipping plot because data frame is empty...")}
@@ -448,9 +450,9 @@ for (i in 1:nmonths) {
     log.calibavgs[i] <- ifelse(is.list(calib.avgs[[i]]) & length(calib.avgs[[i]])!=0,nrow(calib.avgs[[i]]),0)
 
     # clean up variables that don't need to be carried to next i
-    rm(spline.fits)
-    rm(spline.derivatives)
-    rm(good.inds)
+    # rm(spline.fits)
+    # rm(spline.derivatives)
+    # rm(good.inds)
 
 } # end looping through months.
 
