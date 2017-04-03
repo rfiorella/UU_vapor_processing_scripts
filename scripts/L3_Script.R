@@ -8,24 +8,14 @@ rm(list=ls())
 # pros: can enforce a consistent fit.
 # cons: - hard to pull out nearest ambient value. 
 
-library(data.table)
 library(lubridate)
 library(zoo)
 
 # load calibration parameters 
 source("../functions/L3_functions.R")
 
-# Set user variables
-
-start.date <- ymd("2014-01-01")
-end.date <- ymd("2016-01-01")
-
-path.to.L1.data <- "~/WBB_VAPOR/L1/testing/"
-path.to.L2.calib.data <- "~/WBB_VAPOR/L2/testing/"
-path.to.output.L3.data <-  "~/WBB_VAPOR/L3/testing/"
-
-RUN_PLOTS <- "TRUE"
-debug <- 1 # 0 for no debugging, >0 for (increasingly verbose) debugging
+# load user variables
+source("../user/L3_user_specs.R")
 
 # LOAD CALIBRATION DATA
 period <- interval(start.date,end.date)
@@ -33,7 +23,7 @@ period <- interval(start.date,end.date)
 nmonths <- period %/% months(1)
 
 print("==================================================================")
-print(paste("Starting L2 Processing : ",now()))
+print(paste("Starting L3 Processing : ",now()))
 print("==================================================================")
 
 # make an empty list to hold all raw file names
@@ -49,7 +39,7 @@ raw.file.dates <- extract.date.from.L1.files(raw.file.list,dbg.level=debug)
 subset.list <- raw.file.list[raw.file.dates %within% period]
 
 # GET CALIBRATION FILE - note: this is done differently than in previous steps!!!!!
-calib.data <- read.csv(paste(path.to.L2.calib.data,"WBB_Water_Vapor_CalibrationRegressionData_L2_2014-01-01_2016-01-01.dat",sep=""),
+calib.data <- read.table(paste(path.to.L2.calib.data,calib.file,sep=""),
     sep=",",stringsAsFactors=FALSE,header=TRUE)
 
 # initiate log - need to keep track of how much data has been removed.
@@ -120,6 +110,7 @@ for (j in 1:nmonths) {
                 calib.data$O.slope[i]*ambient.data$Delta_18_16[amb.inds.in.calib.row[[i]]] + 
                 calib.data$O.intercept[i]
 
+            # calibrate d2H
             Delta_D_H_vsmow[amb.inds.in.calib.row[[i]]] <-
                 calib.data$H.slope[i]*ambient.data$Delta_D_H[amb.inds.in.calib.row[[i]]] + 
                 calib.data$H.intercept[i]
@@ -128,9 +119,13 @@ for (j in 1:nmonths) {
 
     # print a quick diagnostic plot
     pdf(paste("ambientData_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
+    plot(ambient.data$EPOCH_TIME,ambient.data$H2O,pch=".")
 
-    plot(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16,type="l")
-    lines(ambient.data$EPOCH_TIME,Delta_18_16_vsmow,col="red")
+    plot(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16,pch=".")
+    points(ambient.data$EPOCH_TIME,Delta_18_16_vsmow,pch=".",col="red")
+
+    plot(ambient.data$EPOCH_TIME,ambient.data$Delta_D_H,type="l")
+    points(ambient.data$EPOCH_TIME,Delta_D_H_vsmow,pch=".",col="red")
 
     dev.off()
 
@@ -146,8 +141,8 @@ for (j in 1:nmonths) {
 
     print(paste("Saving calibrated ambient data"))
    
-    calib.dt.name <- paste(path.to.output.L3.data,"WBB_Water_Vapor_AmbientDataVSMOW_L3_",
-        j,".dat",sep="")
+    calib.dt.name <- paste(path.to.output.L3.data,output.file.prefix,
+        desired.year,"_",desired.month,".dat",sep="")
 
     # write out data table of calib.averages.wamb.mrc.bgc.wstds
     write.table(ambient.data,file=calib.dt.name,
