@@ -50,15 +50,13 @@ extract.date.from.L0.files <- function(file.list,dbg.level=0) {
   file.name.dates.woNAs <- file.name.dates[!is.na(file.name.dates)]
   # set warnings to old status
   options(warn = oldw)
-  # return date list
-  return(file.name.dates.woNAs)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending extract.date.from.L0.files function")
     print("==========================================")
   }
-
+  # return date list
+  return(file.name.dates.woNAs)
 }
 
 #------------------------------------------------------------------------------------
@@ -102,15 +100,14 @@ concatenate.to.monthly.uncompiled <- function(month.list,useParallel=TRUE,dbg.le
     } # end length(files) if statement
   } # end (isParallel) if statement
 
-  # return concatenated data
-  return(output)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending concatenate.to.monthly function")
     print("++++++++++++++++++++++++++++++++++++++")
   }
 
+  # return concatenated data
+  return(output)
 }
 
 concatenate.to.monthly <- cmpfun(concatenate.to.monthly.uncompiled)
@@ -144,15 +141,13 @@ qflag.uncompiled <- function(x,dbg.level=0){
   print(paste(100*(1-end/begin),"% of data points removed"))
   # return the filtered data frame and the percentage of points removed
   output <- list("data"=x,"pct.discarded"=round(100*(1-end/begin),2))
-  # return list
-  return(output)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending qflag function")
     print("&&&&&&&&&&&&&&&&&&&&&")
   }
-
+  # return list
+  return(output)
 }
 
 qflag <- cmpfun(qflag.uncompiled)
@@ -187,15 +182,13 @@ data.sanity.check.uncompiled <- function(x,dbg.level=0) {
   print(paste(100*(1-end/begin),"% of data points removed"))
   # return the filtered data frame and the percentage of points removed
   output <- list("data"=x,"pct.discarded"=round(100*(1-end/begin),2))
-  # return output list
-  return(output)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending data.sanity.check function")
     print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
   }
-
+  # return output list
+  return(output)
 }
 
 data.sanity.check <- cmpfun(data.sanity.check.uncompiled)
@@ -276,15 +269,12 @@ post.calibration.filter <- function(qcchecked.data.frame,dbg.level=0) {
   # omit these rows and return the data frame...
   output <- qcchecked.data.frame[-inds.to.remove,]
 
-  # return the output
-  return(output)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending post.calibration.filter function")
     print("+++++++++++++++++++++++++++++++++++++++")
   }
 
-
+  # return the output
+  return(output)
 }
-

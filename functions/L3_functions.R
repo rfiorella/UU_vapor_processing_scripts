@@ -20,13 +20,16 @@ extract.date.from.L1.files <- function(file.list,dbg.level=0) {
   file.name.dates.woNAs <- file.name.dates[!is.na(file.name.dates)]
   # set warnings to old status
   options(warn = oldw)
-  # return date list
-  return(file.name.dates.woNAs)
 
   # print statement announcing the beginning of the function
   if (dbg.level>0) { 
     print("End of extract.date.from.L1.files function") 
     print("==========================================")
   }
+  
+  # return date list
+  return(file.name.dates.woNAs)
+
+
 }
 

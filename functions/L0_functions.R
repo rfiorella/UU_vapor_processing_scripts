@@ -65,13 +65,13 @@ extract.date.from.files.uncompiled <- function(file.list,dbg.level=0) {
 	if (dbg.level>0) {print("restructuring date matrix into a vector of date objects")}
 	# return warnings to old status
 	options(warn = oldw)
-	# return date list as variable of interest
-	return(date.list)
 	# print end of function status message...
 	if (dbg.level>0) {
 		print("End of extract.date.from.files function...")
 		print("==========================================")
 	}
+	# return date list as variable of interest
+	return(date.list)
 }
 
 # compile function
@@ -103,12 +103,13 @@ pad.file.indices.uncompiled <- function(indices,file.list,dbg.level=0) {
   	}
   	# reset array to proper values
   	inds <- seq(minval,maxval,1)
-  	return(inds)
-	# print end of function statement...
+  	# print end of function statement...
 	if (dbg.level>0) {
 		print("end pad.file.indices function...")
 		print("++++++++++++++++++++++++++++++++")
 	}
+	# return file indices to be used at each day of processing.
+  	return(inds)
 }
 
 # compile function
@@ -169,14 +170,14 @@ concatenate.to.daily.uncompiled <- function(indices,date,file.list,useParallel=F
 	# trim output to time limits
 	output.trimmed <- output[output$EPOCH_TIME >= min.seconds & output$EPOCH_TIME < max.seconds,]
 
-	# return the data frame.
-	return(output.trimmed)
-
 	# print end of function statement...
 	if (dbg.level>0) {
 		print("end concatenate.to.daily function...")
 		print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	}
+
+	# return the data frame.
+	return(output.trimmed)
 }
 
 # compile the function
@@ -217,15 +218,15 @@ restructure.time.variables.uncompiled <- function(data.frame,dbg.level=0) {
 
 	# combine new time variables with input data frame
 	new.data.frame <- cbind(newtime,data.frame)
-
-	# return new data frame
-	return(new.data.frame)
-
+	
 	# print end of function statement...
 	if (dbg.level>0) {
 		print("end restructure.time.variables function...")
 		print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 	}
+
+	# return new data frame
+	return(new.data.frame)
 }
 
 # compile the function
@@ -252,14 +253,13 @@ extract.calib.periods <- function(data,dbg.level=0) {
 	CalibPeriod <- data[data$ValveMask == 6 & is.na(data$ValveMask) == FALSE,]
 	# print maximum number of calibration observations
 	print(paste(Sys.time()," Maximum number of calibration points: ",nrow(CalibPeriod)))
-	# return calibration only data frame
-	return(CalibPeriod)
-
 	# print end of function statement...
 	if (dbg.level>0) {
 		print("end extract.calib.periods function...")
 		print("=====================================")
 	}
+	# return calibration only data frame
+	return(CalibPeriod)
 }
 #========================================================================
 
@@ -281,14 +281,13 @@ extract.ambient.periods <- function(data,dbg.level=0) {
 	AmbPeriod <- data[data$ValveMask == 0 & is.na(data$ValveMask) == FALSE,]
 	# print number of ambient observations  
 	print(paste(Sys.time()," Number of ambient points: ",nrow(AmbPeriod)))
-	# return ambient only data frame
-	return(AmbPeriod)
-
 	# print end of function statement...
 	if (dbg.level>0) {
 		print("end extract.ambient.periods function...")
 		print("+++++++++++++++++++++++++++++++++++++++")
 	}	
+	# return ambient only data frame
+	return(AmbPeriod)
 }
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -393,20 +392,25 @@ reduce.ambient.data.uncompiled <- function(ambient.data.frame,time.length.averag
 
 	  	# bind rows together
 	  	reduced.ambient.data <- do.call(rbind,tmp.output)
+  		
+  		# print end of function statement...
+		if (dbg.level>0) {
+			print("end reduce.ambient.data function...")
+			print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+		}	
 
 	  	# return the vector
 	  	return(reduced.ambient.data)
 
   	} else {
   		print("this date has no ambient data - appears to be all calibration data or no data")
+  		  	# print end of function statement...
+		if (dbg.level>0) {
+			print("end reduce.ambient.data function...")
+			print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+		}	
   		return(NULL)
 	} # end if statement re: nperiods
-
-  	# print end of function statement...
-	if (dbg.level>0) {
-		print("end reduce.ambient.data function...")
-		print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-	}	
 }
 
 # compile function

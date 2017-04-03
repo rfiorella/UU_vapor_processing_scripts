@@ -31,15 +31,13 @@ extract.date.from.L1.files <- function(file.list,dbg.level=0) {
   file.name.dates.woNAs <- file.name.dates[!is.na(file.name.dates)]
   # set warnings to old status
   options(warn = oldw)
-  # return date list
-  return(file.name.dates.woNAs)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending extract.date.from.L1.files function")
     print("==========================================")
   }
-
+  # return date list
+  return(file.name.dates.woNAs)
 }
 
 #------------------------------------------------------------------------------------------
@@ -127,14 +125,13 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
 
   fin.breaks <- fin.breaks.tmp[intersect(time.diff,array.diff)]
 
-  return(fin.breaks)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending ID.calib.breakpoints function")
     print("++++++++++++++++++++++++++++++++++++")
   }
 
+  return(fin.breaks)
 }
 
 #------------------------------------------------------------------------------------------
@@ -180,15 +177,14 @@ fit.calibration.splines <- function(calibration.data.frame,breakpoints,dfree=12,
     output.spline.fits[[i]] <- data.frame("time"=temp1,"H2O"=temp2,"d18O"=temp3,"d2H"=temp4)
   }
 
-  # return spline values.
-  return(output.spline.fits)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending fit.calibration.splines function")
     print("***************************************")
   }
 
+  # return spline values.
+  return(output.spline.fits)
 }
 
 #------------------------------------------------------------------------------------------
@@ -232,15 +228,14 @@ calculate.spline.derivatives <- function(spline.fits,breaks,dbg.level=0) {
       "d2_H2O"=temp6,"d2_d18O"=temp7,"d2_d2H"=temp8)
   }
 
-  # return output variable
-  return(spline.derivatives)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending calculate.spline.derivatives function")
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
   }
 
+  # return output variable
+  return(spline.derivatives)
 }
 
 #------------------------------------------------------------------------------------------
@@ -275,14 +270,13 @@ extract.stable.calib.indices <- function(spline.derivatives,H2O.thres=5.0,d18O.t
   #print(indvec)
   inds.to.keep[[i]] <- spline.derivatives[[i]]$inds[indvec]
   }
-  return(inds.to.keep)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending extract.stable.calib.indices function")
     print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
   }
-
+  # return list of inds to keep for each peak.
+  return(inds.to.keep)
 }
 
 #------------------------------------------------------------------------------------------
@@ -457,7 +451,7 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
 
   # filter out some obviously incorrect points.
   h2o.min <- which(std.avgs$H2O.mean > 2000) # must be at least 2000 ppm
-  h2o.max <- which(std.avgs$H2O.mean < 40000) # must be no greater than 30000 ppm
+  h2o.max <- which(std.avgs$H2O.mean < 25000) # must be no greater than 30000 ppm
   h2o.lsd <- which(std.avgs$H2O.sd < 1000)  # enforce a measure of stability
   d18O.lsd <- which(std.avgs$d18O.sd < 1) # enforce a measure of isotopic stability
   d2H.lsd <- which(std.avgs$d2H.sd < 8) # enforce a measure of isotopic stability
@@ -483,15 +477,15 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
   } else {
     std.avgs <- list() # try returning empty list to avoid this from not existing...
   }
-  
-  return(std.avgs)
 
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending calculate.standard.averages function")
     print("===========================================")
   }
-
+  
+  # return data frame of average values for the standards
+  return(std.avgs)
 }
 
 #-----------------------------------------------------------------------------------
@@ -601,15 +595,14 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
     "before.d2H"=before.2H,"after.H2O"=after.H2O,
     "after.d18O"=after.18O,"after.d2H"=after.2H)
 
-  # return output frame
-  return(output)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending get.ambient.deltas function")
     print("++++++++++++++++++++++++++++++++++")
   }
 
+  # return output frame
+  return(output)
 }
 
 #-----------------------------------------------------------------------------------
@@ -646,15 +639,14 @@ apply.mixingratio.correction <- function(avg.data.frame,fit.type,Oslope,Hslope,d
   avg.data.frame <- cbind(avg.data.frame,Delta_18_16_mrc)
   avg.data.frame <- cbind(avg.data.frame,Delta_D_H_mrc)
 
-  # return the whole data frame with the two mixing ratio corrected variables attached.
-  return(avg.data.frame)
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending apply.mixingratio.correction.calibration function")
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
   }
 
+  # return the whole data frame with the two mixing ratio corrected variables attached.
+  return(avg.data.frame)
 }
 
 #-----------------------------------------------------------------------------------
@@ -694,8 +686,6 @@ apply.drygas.correction <- function(data,do.correction=TRUE,H2O.bg,include.gypsu
   data <- cbind(data,Delta_18_16_bgc)
   data <- cbind(data,Delta_D_H_bgc)
   
-  # return data frame
-  return(data)
 
   # print statment denoting the end of this function
   if (dbg.level>0) {
@@ -703,6 +693,8 @@ apply.drygas.correction <- function(data,do.correction=TRUE,H2O.bg,include.gypsu
     print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
   }
 
+  # return data frame
+  return(data)
 }
 
 #-----------------------------------------------------------------------------------
@@ -848,7 +840,7 @@ attach.L2.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("==================================")
-    print("starting attach.L1.Header function")
+    print("starting attach.L2.Header function")
   }
 
   # initiate writing out to output file...
