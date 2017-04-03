@@ -475,7 +475,7 @@ calib.averages.wamb.mrc <- apply.mixingratio.correction(calib.averages.wamb,fit.
     dbg.level=debug)
 
 # correct standard values for vapor bleeding through drierite canister...
-calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc,h2o.bg,
+calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc,H2O.bg,
     include.gypsum.fractionation,dbg.level=debug)
 
 # assign standard names to each calibration period

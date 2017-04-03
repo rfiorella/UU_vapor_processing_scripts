@@ -652,7 +652,7 @@ apply.mixingratio.correction <- function(avg.data.frame,fit.type,Oslope,Hslope,d
 #-----------------------------------------------------------------------------------
 # apply.drygas.correction function - corrected now that ambient data is already in data frame.
 
-apply.drygas.correction <- function(data,do.correction=TRUE,H2O.bg,include.gypsum.fractionation,dbg.level=0) {
+apply.drygas.correction <- function(data,do.correction=TRUE,H2O.bg,include.gypsum.fractionation=FALSE,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
@@ -661,40 +661,88 @@ apply.drygas.correction <- function(data,do.correction=TRUE,H2O.bg,include.gypsu
 
   #======================================================
   # start work of function
-
   print(paste(now()," Applying dry gas correction to calibration data..."))
-  # apply corrections using equation S3 of Gorski et al 2014.
-  Delta_18_16_bgc <- (data$Delta_18_16_mrc*data$H2O.mean -
-    data$before.d18O*H2O.bg)/(data$H2O.mean-H2O.bg)
-  Delta_D_H_bgc <- (data$Delta_D_H_mrc*data$H2O.mean -
-    data$before.d2H*H2O.bg)/(data$H2O.mean-H2O.bg)
 
-  # temporary kludge fix - some of these data points won't have
-  # ambient data available before, but will have data available after.
-  # so, for those rows that returned NA previously, go back
-  # and fill those using ambient data from after the analysis
-  Delta_18_16_bgc[is.na(Delta_18_16_bgc)] <- 
-    (data$Delta_18_16_mrc[is.na(Delta_18_16_bgc)]*data$H2O.mean[is.na(Delta_18_16_bgc)] -
-    data$after.d18O[is.na(Delta_18_16_bgc)]*H2O.bg)/
-    (data$H2O.mean[is.na(Delta_18_16_bgc)]-H2O.bg)
-  Delta_D_H_bgc[is.na(Delta_D_H_bgc)] <- 
-    (data$Delta_D_H_mrc[is.na(Delta_D_H_bgc)]*data$H2O.mean[is.na(Delta_D_H_bgc)] -
-    data$after.d2H[is.na(Delta_D_H_bgc)]*H2O.bg)/
-    (data$H2O.mean[is.na(Delta_D_H_bgc)]-H2O.bg)
+  if (include.gypsum.fractionation==FALSE) {
+    # apply corrections using equation S3 of Gorski et al 2014.
+    Delta_18_16_bgc <- (data$Delta_18_16_mrc*data$H2O.mean -
+      data$before.d18O*H2O.bg)/(data$H2O.mean-H2O.bg)
+    Delta_D_H_bgc <- (data$Delta_D_H_mrc*data$H2O.mean -
+      data$before.d2H*H2O.bg)/(data$H2O.mean-H2O.bg)
 
-  # add these columns to the original data frame
-  data <- cbind(data,Delta_18_16_bgc)
-  data <- cbind(data,Delta_D_H_bgc)
+    # temporary kludge fix - some of these data points won't have
+    # ambient data available before, but will have data available after.
+    # so, for those rows that returned NA previously, go back
+    # and fill those using ambient data from after the analysis
+    Delta_18_16_bgc[is.na(Delta_18_16_bgc)] <- 
+      (data$Delta_18_16_mrc[is.na(Delta_18_16_bgc)]*data$H2O.mean[is.na(Delta_18_16_bgc)] -
+      data$after.d18O[is.na(Delta_18_16_bgc)]*H2O.bg)/
+      (data$H2O.mean[is.na(Delta_18_16_bgc)]-H2O.bg)
+    Delta_D_H_bgc[is.na(Delta_D_H_bgc)] <- 
+      (data$Delta_D_H_mrc[is.na(Delta_D_H_bgc)]*data$H2O.mean[is.na(Delta_D_H_bgc)] -
+      data$after.d2H[is.na(Delta_D_H_bgc)]*H2O.bg)/
+      (data$H2O.mean[is.na(Delta_D_H_bgc)]-H2O.bg)
+
+    # add these columns to the original data frame
+    data <- cbind(data,Delta_18_16_bgc)
+    data <- cbind(data,Delta_D_H_bgc)
+    
+
+    # print statment denoting the end of this function
+    if (dbg.level>0) {
+      print("ending apply.drygas.correction function")
+      print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+    }
+
+    # return data frame
+    return(data)
+  } else if (include.gypsum.fractionation==TRUE) {
+    # much more complicated function here than without removing gypsum fractionation
+
+    alpha.CaSO4.hydwater.oxygen <-  1.004 # source: Fontes, Gonfiantini and Fontes     
+    alpha.CaSO4.hydwater.hydrogen <- 0.9825 # source: Horita EPSL
+
+    # apply oxygen correction
+    #--------------------------
+    oxygen.numerator <- data$Delta_18_16_mrc*data$H2O.mean -
+      (data$before.d18O*data$before.H2O)-(data$before.H2O-H2O.bg)*
+      (alpha.CaSO4.hydwater.oxygen*(data$before.d18O+1000)-1000)
+
+    # kludge fix for missing values.
+    oxygen.numerator[is.na(oxygen.numerator)] <- data$Delta_18_16_mrc*data$H2O.mean -
+      (data$after.d18O*data$after.H2O)-(data$after.H2O-H2O.bg)*
+      (alpha.CaSO4.hydwater.oxygen*(data$after.d18O+1000)-1000)
+
+    # calculate background corrected d18O
+    Delta_18_16_bgc <- oxygen.numerator/(data$H2O.mean-H2O.bg)
   
+    # apply hydrogen correction
+    #----------------------------
+    hydrogen.numerator <- data$Delta_D_H_mrc*data$H2O.mean -
+      (data$before.d2H*data$before.H2O)-(data$before.H2O-H2O.bg)*
+      (alpha.CaSO4.hydwater.hydrogen*(data$before.d2H+1000)-1000)
 
-  # print statment denoting the end of this function
-  if (dbg.level>0) {
-    print("ending apply.drygas.correction function")
-    print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+    # kludge fix for missing values.
+    hydrogen.numerator[is.na(hydrogen.numerator)] <- data$Delta_D_H_mrc*data$H2O.mean -
+      (data$after.d2H*data$after.H2O)-(data$after.H2O-H2O.bg)*
+      (alpha.CaSO4.hydwater.hydrogen*(data$after.d2H+1000)-1000)
+
+    # calculate background corrected d2H
+    Delta_D_H_bgc <- oxygen.numerator/(data$H2O.mean-H2O.bg)
+
+    # add these columns to the original data frame
+    data <- cbind(data,Delta_18_16_bgc)
+    data <- cbind(data,Delta_D_H_bgc)
+
+    # print statment denoting the end of this function
+    if (dbg.level>0) {
+      print("ending apply.drygas.correction function")
+      print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+    }
+
+    # return data frame
+    return(data)
   }
-
-  # return data frame
-  return(data)
 }
 
 #-----------------------------------------------------------------------------------
