@@ -118,7 +118,7 @@ for (j in 1:nmonths) {
     }
 
     # print a quick diagnostic plot
-    pdf(paste("ambientData_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
+    pdf(paste("diag_plots/ambientData_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
     plot(ambient.data$EPOCH_TIME,ambient.data$H2O,pch=".")
 
     plot(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16,pch=".")
@@ -130,7 +130,7 @@ for (j in 1:nmonths) {
     dev.off()
 
 
-    pdf(paste("ambientData_diff_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
+    pdf(paste("diag_plots/ambientData_diff_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
     plot(Delta_18_16_vsmow-ambient.data$Delta_18_16,type="l")
     dev.off()
     # Save L3 file
