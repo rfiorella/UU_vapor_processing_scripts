@@ -8,7 +8,8 @@
 # ignore anything with internal in it - these are for UU specific application/development
 internal*
 data_sync/
-humidity_calibrations/
+humiditycalibrations/
 
 # ignore diagnostic plots
 scripts/diag_plots/
+scripts/*.pdf
