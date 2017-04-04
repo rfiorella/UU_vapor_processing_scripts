@@ -213,7 +213,7 @@ for (i in 1:nmonths) {
  		# write out data portion of the data file.
  		write.table(mondata.pcfilter,file=coutput.fname,sep=",",append = TRUE,row.names=FALSE)
  	} else {
- 		print(paste(now(), "No data passed filters for this month...."))
+ 		print(paste(now(), "No data passed filters for this month..."))
  	}
 
  	# clean up calibration data and gc
