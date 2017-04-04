@@ -2,7 +2,7 @@
 # richf, 27jan17
 
 # combined script meant to calibrate Picarro vapor data - relies on the water vapor calibration functions
-rm(list=ls())
+#rm(list=ls())
 
 # LOAD REQUIRED LIBRARIES
 #==========================================================================
@@ -490,7 +490,7 @@ calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bg
 print(paste("Saving calibration data in two separate files"))
 print(paste("The first - save all the information about each identified calibration data point..."))
 
-calib.dt.name <- paste(path.to.output.L2.data,"SBD_Water_Vapor_CalibrationAverages_L2_",
+calib.dt.name <- paste(path.to.output.L2.data,output.file.prefix,"_CalibrationAverages_L2_",
     start.date,"_",end.date,".dat",sep="")
 
 # attach metadata
@@ -503,7 +503,7 @@ write.table(calib.averages.wamb.mrc.bgc.wstds,file=calib.dt.name,
 # ok, now write out the data file that contains the regression parameters...
 print(paste("The second - save the regression parameters for each period..."))
 
-regress.dt.name <- paste(path.to.output.L2.data,"SBD_Water_Vapor_CalibrationRegressionData_L2_",
+regress.dt.name <- paste(path.to.output.L2.data,output.file.prefix,"_CalibrationRegressionData_L2_",
     start.date,"_",end.date,".dat",sep="")
 
 # attach metadata
