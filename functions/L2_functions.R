@@ -449,35 +449,6 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
     "ind.count"=temp13,"d18O.trend"=temp14,"d18O.r2trend"=temp15,
     "d2H.trend"=temp16,"d2H.r2trend"=temp17)
 
-  # filter out some obviously incorrect points.
-  h2o.min <- which(std.avgs$H2O.mean > 2000) # must be at least 2000 ppm
-  h2o.max <- which(std.avgs$H2O.mean < 25000) # must be no greater than 30000 ppm
-  h2o.lsd <- which(std.avgs$H2O.sd < 1000)  # enforce a measure of stability
-  d18O.lsd <- which(std.avgs$d18O.sd < 1) # enforce a measure of isotopic stability
-  d2H.lsd <- which(std.avgs$d2H.sd < 8) # enforce a measure of isotopic stability
-  # enforce a max length on the calibration data set - calibration periods identified
-  # are unlikely to be longer than a half hour. at 1.16 Hz: 60 sec*1.16Hz*30 min = 2088 inds.
-  max.length <- which(std.avgs$ind.count <= 4200)
-  # also, require at least 2 minutes of data for data points 1.16 Hz*60sec*3 min = 140 inds
-  min.length <- which(std.avgs$ind.count >= 35)
-
-  retain.inds <- Reduce(intersect,list(h2o.min,h2o.max,h2o.lsd,d18O.lsd,d2H.lsd,max.length,min.length))
-  
-  #retain.inds <- seq(1,nrow(std.avgs),1) # for debugging - keeps all data.
-
-  #print(retain.inds)
-  #if (memory.filter) {print(mem.count)}
-  # print some diagnostics. 
-  print(paste(nrow(std.avgs)-length(retain.inds),
-     " of ",nrow(std.avgs)," (",round(100*(nrow(std.avgs)-length(retain.inds))/nrow(std.avgs),2),
-     "%) calibration periods failed filter...removing..."))
-  
-  if (length(retain.inds) > 0) {
-    std.avgs <- std.avgs[retain.inds,] 
-  } else {
-    std.avgs <- list() # try returning empty list to avoid this from not existing...
-  }
-
   # print statment denoting the end of this function
   if (dbg.level>0) {
     print("ending calculate.standard.averages function")
@@ -897,7 +868,7 @@ attach.L2.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
   # add L1 information to top of output file...
   cat("# BEGIN L2 HEADER \n")
 
-  # note when L1 script was run
+  # note when L2 script was run
   cat(paste("# date.L2.scripts.run, ",base::date(),"\n"))
   cat(paste("# time.threshold.for.separate.standard.runs, ",time.threshold,"\n"))
   cat(paste("# stiff.spline.dfs, ",stiff.spline.dfs,"\n"))
@@ -925,7 +896,6 @@ attach.L2.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
   for (i in 1:length(metadata_dataframe)) {
     cat(paste(metadata_dataframe[i],"\n")) 
   }
-
   # turn off output
   sink()
   

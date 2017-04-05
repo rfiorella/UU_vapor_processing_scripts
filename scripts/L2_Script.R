@@ -152,7 +152,6 @@ for (i in 1:nmonths) {
     }
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 # 	# now that we have nice smooth splines, estimate derivatives...
  	spline.derivatives <- calculate.spline.derivatives(spline.fits,breaks,dbg.level=debug)
 
@@ -481,8 +480,21 @@ calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc,H
 # assign standard names to each calibration period
 calib.averages.wamb.mrc.bgc.wstds <- assign.standard.names.and.values(calib.averages.wamb.mrc.bgc)
 
+# do some filtering! --------------------------------------
+h2o.min <- which(calib.averages.wamb.mrc.bgc.wstds$H2O.mean > h2o.min.thres) 
+h2o.max <- which(calib.averages.wamb.mrc.bgc.wstds$H2O.mean < h2o.max.thres) 
+h2o.sd <- which(calib.averages.wamb.mrc.bgc.wstds$H2O.sd < h2o.sdev.thres) 
+d18O.sd <- which(calib.averages.wamb.mrc.bgc.wstds$d18O.sd < d18O.sdev.thres) 
+d2H.sd <- which(calib.averages.wamb.mrc.bgc.wstds$d2H.sd < d2H.sdev.thres) 
+max.length <- which(calib.averages.wamb.mrc.bgc.wstds$ind.count <= max.length.thres)
+min.length <- which(calib.averages.wamb.mrc.bgc.wstds$ind.count >= min.length.thres)
+
+retain.inds <- Reduce(intersect,list(h2o.min,h2o.max,h2o.sd,d18O.sd,d2H.sd,max.length,min.length))
+
+calib.averages.wamb.mrc.bgc.wstds.filtered <- calib.averages.wamb.mrc.bgc.wstds[retain.inds,]
+
 # calculate the correction slopes/intercepts.
-calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds,dbg.level=debug)
+calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds.filtered,dbg.level=debug)
 
 #------------------------------------------------------------------------
 # Write out calibration parameters into a data file.

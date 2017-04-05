@@ -11,22 +11,22 @@
 
 # 1a. what dates should we process? script works sequentially on dates from startdate to enddate.
 
-start.date <- ymd("2016-12-01")
-end.date <- ymd("2017-03-01")
+start.date <- ymd("2016-03-01")
+end.date <- ymd("2016-04-01")
 
 # 1b. where is the data we're processing? and where should we save output data?
-path.to.L1.data <- "~/VaporData/SBD_VAPOR/L1/testing/"
-path.to.output.L2.data <-  "~/VaporData/SBD_VAPOR/L2/WBB_SBD_comp/"
+path.to.L1.data <- "~/VaporData/WBB_VAPOR/L1/v1beta/"
+path.to.output.L2.data <-  "~/VaporData/WBB_VAPOR/L2/testing/"
 
 # 1c. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
-output.file.prefix <- "SBD_Water_Vapor"
+output.file.prefix <- "WBB_Water_Vapor"
 
 # 1d. should we run diagnostic plots? (logical value)
-RUN_PLOTS <- "TRUE"
+RUN_PLOTS <- TRUE
 
 # 1e. Is debugging necessary? This parameter will help determine why code is crashing.
-debug <- 1
+debug <- 0
 
 ###################################################################
 # SECTION 2: Information specific to the analyzer
@@ -36,7 +36,7 @@ debug <- 1
 # delta(@20000ppm) = slope*(1/20000-1/measured.H2O) + measured.delta
 
 # set site...
-site <- "Snowbird"
+site <- "WBB"
 
 if (site=="WBB") {
   fit.type <- "hyperbolic" # allowed values: hyperbolic (1/H2O)
@@ -219,11 +219,7 @@ d2H.thres <- 0.1
 # built in function sequentially throws out 10% of data at the beginning
 # of peak until the estimated trend magnitude (permil/min) is less than 
 # 0.1 for d18O and 0.5 for d2H, or 80% of the data has been removed. 
-memory.filter <- TRUE 
-
-# future task: pull out maximum slopes allowed as a user variable right here...
-
-# future task 2 : pull out maximum allowed values for peaks here...
+memory.filter <- TRUE
 
 # apply.mixingratio.correction ------------
 # parameters already included in section 2!
@@ -235,8 +231,20 @@ do.correction <- TRUE # set to true if using drierite, can set to false otherwis
 
 H2O.bg <- 250 # integer - what ppmv concentration of H2O assumed to get through column?
 
-include.gypsum.fractionation <- FALSE 
+include.gypsum.fractionation <- FALSE
 # additional second-order adjustment to vapor making it through column by 
 # including influence of gypsum hydration water fractionation factors onto
 # the column. Not yet implemented, so this switch currently has no effect.
+
+# Finally, perform some filtering to the produced average data frame -------
+# this section seeks to define additional parameters/checks on what
+# constitutes an acceptible standard analysis.
+
+h2o.max.thres <- 30000    # maximum mean H2O concentration allowed
+h2o.min.thres <- 2000     # minimum mean H2O concentration allowed
+h2o.sdev.thres <- 1000    # maximum standard deviation for H2O allowed
+d18O.sdev.thres <- 1      # maximum standard deviation for d18O allowed
+d2H.sdev.thres <- 8       # maximum standard deviation for d2H allowed
+max.length.thres <- 4200  # maximum number of indices allowed (at 1.16 Hz, 4200 = 1 hour)
+min.length.thres <- 35    # minimum number of indices required (at 1.16 Hz, 35 = 30 seconds)
 
