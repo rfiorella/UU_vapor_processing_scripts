@@ -870,23 +870,66 @@ attach.L2.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
 
   # note when L2 script was run
   cat(paste("# date.L2.scripts.run, ",base::date(),"\n"))
+
+  # what amount of time difference between points qualifies to (roughly) divide analyses?
   cat(paste("# time.threshold.for.separate.standard.runs, ",time.threshold,"\n"))
+
+  # how many degrees of freedom should be used in the stiff spline?
   cat(paste("# stiff.spline.dfs, ",stiff.spline.dfs,"\n"))
+
+  # what threshold value was used to identify an unacceptably large trend in H2O?
   cat(paste("# spline.derivative.H2O.threshold (ppm/sec), ",H2O.thres,"\n"))
+
+  # what threshold value was used to identify an unacceptably large trend in d18O?
   cat(paste("# spline.derivative.d18O.threshold (permil/sec), ",d18O.thres,"\n"))
+
+  # what threshold value was used to identify an unacceptably large trend in d2H?
   cat(paste("# spline.derivative.d2H.threshold (permil/sec), ",d2H.thres,"\n"))
+
+  # did we attempt to remove potential effects of memory?
   cat(paste("# memory.filter.on to calculate averages, ",memory.filter,"\n"))
+  # future addition - what thresholds were used????
+
+  # did we correct for incomplete drying of "dry gas" as a mixing equation?
   cat(paste("# dry.gas.correction.applied, ",do.correction,"\n"))
   if (do.correction==TRUE) {
+    # if yes, what value of H2O ppmv did we assume made it through the column?
     cat(paste("# background H2O assumed, ",H2O.bg,"\n"))
+    # did we account for fractionation during hydration of gypsum? (typically a small effect)
     cat(paste("# gypsum fractionation included in drierite correction, ",include.gypsum.fractionation,"\n"))
   }
+
+  # what type of (linear) function was used to correct for delta dependence on humidity?
   cat(paste("# humidity correction fit type, ",fit.type,"\n"))
+
+  # what was the value of the delta-humidity correction slope for d18O?
   cat(paste("# humidity correction oxygen slope, ",Oslope, "\n"))
+
+  # what was the value of the delta-humidity correction slope for d2H?
   cat(paste("# humidity correction hydrogen slope, ",Hslope,"\n"))
 
-  # future dev: include information about standard? probably not necessary since this is included
-  # in output variables.
+  # summary of filter values used to remove "bad" peaks -------------------------
+  # maximum H2O value allowed?
+  cat(paste("# maximum mean H2O allowed in peaks, ",h2o.max.thres,"\n"))
+
+  # minimum H2O value allowed?
+  cat(paste("# minimum mean H2O allowed in peaks, ",h2o.min.thres,"\n"))
+
+  # maximum sd H2O value allowed?
+  cat(paste("# maximum H2O standard deviation allowed in peaks, ",h2o.sdev.thres,"\n"))
+
+  # maximum sd d18O value allowed?
+  cat(paste("# maximum d18O standard deviation allowed in peaks, ",d18O.sdev.thres,"\n"))
+
+  # maximum sd d2H value allowed?
+  cat(paste("# maximum d2H standard deviation allowed in peaks, ",d2H.sdev.thres,"\n"))
+
+  # maximum number of measurements allowed? (at 1.16 Hz, 4200 indices = 1 hour)
+  # this filter is necessary if an analyzer runs out of dry gas source, for example.
+  cat(paste("# maximum number of measurements allowed in peaks, ",max.length.thres,"\n"))
+
+  # mainimum number of measurements allowed? (at 1.16 Hz, 35 indices = 30 seconds)
+  cat(paste("# minimum number of measurements allowed in peaks, ",min.length.thres,"\n"))
 
   # close L1 header
   cat("# END L2 HEADER \n")
