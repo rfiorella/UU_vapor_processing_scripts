@@ -253,6 +253,9 @@ post.calibration.filter <- function(qcchecked.data.frame,dbg.level=0) {
   # first, find where the calibration periods are...
   ind.after.calib <- which(diff(qcchecked.data.frame$EPOCH_TIME)>120) + 1
 
+  # return whole data frame if there are no periods passing this test...
+  if (length(ind.after.calib)==0) { return(qcchecked.data.frame) }
+
   # identify point 15 minutes later...
   end.calib.memory.period <- ind.after.calib + 30 # note: THIS ASSUMES USING 1 MINUTE AVERAGES!!!!
 
