@@ -141,8 +141,13 @@ for (j in 1:nmonths) {
 
     print(paste("Saving calibrated ambient data"))
    
-    calib.dt.name <- paste(path.to.output.L3.data,output.file.prefix,
-        desired.year,"_",desired.month,".dat",sep="")
+    if (desired.month < 10) {
+        calib.dt.name <- paste(path.to.output.L3.data,output.file.prefix,
+            desired.year,"_0",desired.month,".dat",sep="")
+    } else {
+        calib.dt.name <- paste(path.to.output.L3.data,output.file.prefix,
+            desired.year,"_",desired.month,".dat",sep="")
+    }
 
     # write out data table of calib.averages.wamb.mrc.bgc.wstds
     write.table(ambient.data,file=calib.dt.name,
