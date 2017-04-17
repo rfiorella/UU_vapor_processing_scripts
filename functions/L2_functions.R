@@ -931,7 +931,7 @@ attach.L2.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
   # mainimum number of measurements allowed? (at 1.16 Hz, 35 indices = 30 seconds)
   cat(paste("# minimum number of measurements allowed in peaks, ",min.length.thres,"\n"))
 
-  # close L1 header
+  # close L2 header
   cat("# END L2 HEADER \n")
 
   # append L0/L1 headers.
@@ -948,4 +948,3 @@ attach.L2.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
     print("================================")
   }
 }
-

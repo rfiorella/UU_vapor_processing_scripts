@@ -19,7 +19,7 @@ library(lubridate) # include useful time functions
 ##################################################################################
 # determine the number of cores available for parallel computing
 
-no_cores <- detectCores() - 1 # but leave on thread available so as not to crash computer
+no_cores <- detectCores() -1    # but leave on thread available so as not to crash computer
 							  # this is important if runnning on a local computer, but -1 
 							  # can be removed if running on a dedicated cluster
 print(paste(Sys.time(),"Number of available cores for parallel processing:",no_cores))
