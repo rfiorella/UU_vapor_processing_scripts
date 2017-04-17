@@ -29,7 +29,51 @@ extract.date.from.L1.files <- function(file.list,dbg.level=0) {
   
   # return date list
   return(file.name.dates.woNAs)
-
-
 }
+
+#---------------------------------------------------------------------------
+# attach.L3.Header
+
+attach.L3.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("==================================")
+    print("starting attach.L3.Header function")
+  }
+
+  # initiate writing out to output file...
+  sink(output_filename)
+
+  # add L1 information to top of output file...
+  cat("# BEGIN L3 HEADER \n")
+
+  # note when L2 script was run
+  cat(paste("# date.L3.scripts.run, ",base::date(),"\n"))
+
+  # calibration file used...
+  cat(paste("# Calibration file used, ",path.to.L2.calib.data,calib.file,"\n"))
+
+  # close L3 header
+  cat("# END L3 HEADER \n")
+
+  # append L0/L1/L3 headers.
+  # loop through existing headers and paste below L3 header.
+  for (i in 1:length(metadata_dataframe)) {
+    cat(paste(metadata_dataframe[i],"\n")) 
+  }
+  
+  # turn off output
+  sink()
+  
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending attach.L3.Header function")
+    print("================================")
+  }
+}
+
+
+
+
+
 

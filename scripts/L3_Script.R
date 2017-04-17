@@ -47,6 +47,10 @@ log.yyyy <- vector()
 log.mm 	 <- vector()
 log.pct  <- vector()
 
+# SET UP METADATA HEADERS
+# Get metadata from an L1 file in here to pass along to L2 header...
+tmp <- readLines(raw.file.list[[1]]) # get first calibration file.
+
 # BEGIN LOOPING THROUGH MONTHS.
 
 # start file counter
@@ -149,9 +153,11 @@ for (j in 1:nmonths) {
             desired.year,"_",desired.month,".dat",sep="")
     }
 
+    # Attach metadata header.
+    attach.L3.Header(calib.dt.name,md.frame,dbg.level=debug)
+    
     # write out data table of calib.averages.wamb.mrc.bgc.wstds
     write.table(ambient.data,file=calib.dt.name,
         sep=",",row.names=FALSE)
-
 
 }
