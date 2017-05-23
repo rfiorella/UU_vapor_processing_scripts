@@ -25,7 +25,7 @@
 
 rm(list=ls())
 
-#Rprof("L0profile_30jan17")
+Rprof("L0profile_18may17_v110")
 ######################################################################################################################################
 # load associated function file(s) 
 
@@ -82,8 +82,8 @@ for (i in 1:ndays) {
 
   #--------------------------------------------------------------------
   # LOG FILE - INFORMATION ABOUT HOW MUCH DATA CORRESPONDS TO EACH DAY
-  # log.date[i] <- as.Date(startdate)+(i-1)
-  # log.nfil[i] <- length(files.within.day)
+   log.date[i] <- as.Date(startdate)+(i-1)
+   log.nfil[i] <- length(files.within.day)
   #--------------------------------------------------------------------
 
   # some days will be missing, so need a function that will cause script to move to the 
@@ -111,7 +111,7 @@ for (i in 1:ndays) {
 
   #--------------------------------------------------------------------
   # LOG FILE - INFORMATION ABOUT HOW MUCH DATA CORRESPONDS TO EACH DAY
-  # log.npts[i] <- nrow(daily.data.wtimefix)
+   log.npts[i] <- nrow(daily.data.wtimefix)
   #--------------------------------------------------------------------
 
   # divide into ambient and calibration data files
@@ -165,11 +165,16 @@ for (i in 1:ndays) {
   } else {
     print(paste(Sys.time(), "No data passed filters for this day...."))
   }
- }
+
+  # get time to process this day.
+  tmp <- proc.time() - ptm
+  log.time[i] <- tmp[3]
+
+}
 
 # WRITE OUT LOG FILE
-#log.dataframe <- data.frame(log.date,log.nfil,log.npts,log.time)
-#log.fname <- paste("log_",Sys.time(),"_",startdate,"_to_",enddate,sep="")
-#write.table(log.dataframe,file=log.fname,sep=",")
+log.dataframe <- data.frame(log.date,log.nfil,log.npts,log.time)
+log.fname <- paste("log_",Sys.time(),"_",startdate,"_to_",enddate,sep="")
+write.table(log.dataframe,file=log.fname,sep=",")
 
-#Rprof(NULL)
+Rprof(NULL)

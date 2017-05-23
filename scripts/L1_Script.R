@@ -20,6 +20,9 @@ source("../functions/L1_functions.R")
 
 # load user parameters
 source("../user/L1_user_specs.R")
+
+# profile code.
+Rprof("L1_v1_0_0test")
 ##########################################################################
 # LOAD DAILY DATA, CONCATENATE TO MONTHLY, THEN SEPARATE INTO 
 # CALIBRATION AND AMBIENT MEASUREMENT PERIODS
@@ -63,7 +66,12 @@ amb.subset <- amb.file.list[amb.file.dates %within% period]
 # initiate log - need to keep track of how much data has been removed.
 log.yyyy <- vector()
 log.mm 	 <- vector()
-log.pct  <- vector()
+log.pctc <- vector()
+log.pcta <- vector()
+log.nptsc <- vector()
+log.nptsa <- vector()
+log.timec <- vector()
+log.timea <- vector()
 
 # initiate vector to hold data
 file.list.by.month <- vector("list",nmonths)
@@ -78,6 +86,10 @@ md.frame <- tmp[grep("#",tmp)] # pull out lines starting with comment character.
 #-----------------------------------------------------------------------------
 
 for (i in 1:nmonths) {
+
+	# set up timer.
+	ptm <- proc.time()
+
 	# print status header.
 	print("==================================================================")
 	print(paste("Processing L1 calibration data for month:",month(start.date %m+% months(i-1)),"/",year(start.date %m+% months(i-1))))
@@ -111,7 +123,8 @@ for (i in 1:nmonths) {
 	# small bug here to fix at some point - the reference points for these are different,
 	# so ultimately, this value can exceed 100% in rare cases when all of the data fails
 	# one check or the other.
-	log.pct[i] <- mondata.filtered$pct.discarded + mondata.qflag$pct.discarded
+	log.pctc[i] <- mondata.filtered$pct.discarded + mondata.qflag$pct.discarded
+	log.nptsc[i] <- nrow(mondata.filtered$data)
 
 	# clean up memory and gc
 	rm(mondata.qflag)
@@ -138,6 +151,12 @@ for (i in 1:nmonths) {
  	# clean up calibration data and gc
  	rm(mondata.filtered)
  	gc()
+
+ 	# write out time for calibration data. 
+ 	tmp <- proc.time() - ptm
+ 	log.timec[i] <- tmp[3] # take out elapsed time.
+ 	rm(ptm) # remove prior time marker
+ 	rm(tmp) # remove tmp time holder
 }
 
 # clean up remaining variables corresponding to calibration data. 
@@ -152,6 +171,8 @@ file.list.by.month <- vector("list",nmonths)
 #-----------------------------------------------------------------------------
 
 for (i in 1:nmonths) {
+	# set up timer.
+	ptm <- proc.time()
 
 	# print status header.
 	print("==================================================================")
@@ -180,18 +201,18 @@ for (i in 1:nmonths) {
 	# NOTE: $data required here since output of qflag is a list!
 	mondata.qccheck <- data.sanity.check(mondata.qflag$data,dbg.level=debug) 
 
-	# get data row for log file - 
-	log.yyyy[i] <- year(start.date %m+% months(i-1))
-	log.mm[i] <- month(start.date %m+% months(i-1))
 	# small bug here to fix at some point - the reference points for these are different,
 	# so ultimately, this value can exceed 100% in rare cases when all of the data fails
 	# one check or the other.
-	log.pct[i] <- mondata.qccheck$pct.discarded + mondata.qccheck$pct.discarded
+	log.pcta[i] <- mondata.qccheck$pct.discarded + mondata.qccheck$pct.discarded
 
 	# ambient data needs a bit more filtering here - namely, after a calibration period
 	# there are often apparent discontinuities in the data that are problematic...
 
 	mondata.pcfilter <- post.calibration.filter(mondata.qccheck$data,dbg.level=debug)
+
+	# get number of rows.
+	log.nptsa[i] <- nrow(mondata.pcfilter)
 
 	# clean up memory and gc
 	rm(mondata.qflag)
@@ -219,9 +240,15 @@ for (i in 1:nmonths) {
  	# clean up calibration data and gc
  	rm(mondata.pcfilter)
  	gc()
+
+ 	 # write out time for calibration data. 
+ 	tmp <- proc.time() - ptm
+ 	log.timea[i] <- tmp[3] # take out elapsed time.
+ 	rm(ptm) # remove prior time marker
+ 	rm(tmp) # remove prior temporary placeholder
  }
 
-# Rprof(NULL)
-# log.fname <- paste("L1_log",".dat",sep="")
-# log.output <- data.frame(log.yyyy,log.mm,log.pct)
-# write.table(log.output,file=log.fname,sep=",")
+Rprof(NULL)
+log.fname <- paste("L1_log_v110beta",".dat",sep="")
+log.output <- data.frame(log.yyyy,log.mm,log.pctc,log.pcta,log.nptsc,log.nptsa,log.timec,log.timea)
+write.table(log.output,file=log.fname,sep=",")
