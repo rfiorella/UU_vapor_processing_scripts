@@ -51,9 +51,11 @@ extract.date.from.files.uncompiled <- function(file.list,dbg.level=0) {
 		print("may need to be changed if your file structure is different")
 		print("(either in data location or if you are not on a macOS/linux system!)")
 	}
+	#print(file.name.string.pieces)
 	# force string pieces to be numeric - should only leave the yyy, mm, and dd pieces
 	file.name.string.vector <- as.numeric(unlist(file.name.string.pieces)) 
 	if (dbg.level>0) {print("finding numeric portions of the file name - isolates yyyy,mm,dd pieces")}
+	#print(file.name.string.vector)
 	# remove NAs from prior vector, leaving only the components associated with the date
 	date.vector <- file.name.string.vector[!is.na(file.name.string.vector)]
 	# restructure to a matrix with dimensions daysX3 (for yyyy,mm,dd) and fill by row, not by column
@@ -250,7 +252,8 @@ extract.calib.periods <- function(data,dbg.level=0) {
 	}
 
 	# new strategy - identify all points where vm is 6, then find point just before or just after 
-	CalibPeriod <- data[data$ValveMask == 6 & is.na(data$ValveMask) == FALSE,]
+	#CalibPeriod <- data[data$ValveMask == 6 & is.na(data$ValveMask) == FALSE,]
+	CalibPeriod <- data[data$ValveMask >= 6 & is.na(data$ValveMask) == FALSE,]
 	# print maximum number of calibration observations
 	print(paste(Sys.time()," Maximum number of calibration points: ",nrow(CalibPeriod)))
 	# print end of function statement...
@@ -310,107 +313,131 @@ reduce.ambient.data.uncompiled <- function(ambient.data.frame,time.length.averag
 		print("begin reduce.ambient.data function...")
 	}
 
-	# print statement detailing what this function does...
-	print(paste(Sys.time()," Reducing ambient data to ",time.length.average," minute averages"))
+	# check to make sure there is actually ambient data fed into this data.
+	if (nrow(ambient.data.frame)==0) {return(NULL)}
+
+	# v1.1.0 - try to use xts here for speed.
+	use.xts <- require(xts)
+
+	if (use.xts==TRUE) {
+		# print statement detailing what this function does...
+		print(paste(Sys.time()," Reducing ambient data to ",time.length.average," minute averages"))
+		dframe <- as.xts(ambient.data.frame,
+			order.by=as.POSIXct(ambient.data.frame$EPOCH_TIME,tz="UTC",origin="1970-01-01"))
+
+		# get endpoints
+		eps <- endpoints(dframe,on="minutes",k=time.length.average)
 	
-	# find month we're working in and how many days are in it.
-	mon <- month(ambient.data.frame$MM[1]) # probably can do better...
-	year <- ambient.data.frame$YYYY[1]
-	dinm <- days_in_month(mon) 
+		# take mean.
+		dframe.reduced <- period.apply(dframe,eps,mean)
 
-	# determine number of potential data points in output data.frame
-	nperiods <- dinm*(24)*(60/time.length.average)
+		# return data
+		return(coredata(dframe.reduced))
+	} else {
+		print("Consider installing the xts package - this will go much faster...")
+		# print statement detailing what this function does...
+		print(paste(Sys.time()," Reducing ambient data to ",time.length.average," minute averages"))
+		
+		# find month we're working in and how many days are in it.
+		mon <- month(ambient.data.frame$MM[1]) # probably can do better...
+		year <- ambient.data.frame$YYYY[1]
+		dinm <- days_in_month(mon) 
 
-	# print(nperiods)
-	# create output array
-	startdate <- ymd(paste(year,mon,"01"))
-	if (!is.na(nperiods) & nperiods > 0) {
-		  time.averages.array <- as.numeric(as.POSIXct(startdate + c(0:nperiods) * minutes(time.length.average),origin="1970-01-01"))
-	  
-		# data.time.array
-		data.time.array <- as.numeric(as.POSIXct(ymd_hms(paste(ambient.data.frame$YYYY,ambient.data.frame$MM,
-			ambient.data.frame$DD,ambient.data.frame$hh,ambient.data.frame$mm,ambient.data.frame$ss)),origin="1970-01-01"))
+		# determine number of potential data points in output data.frame
+		nperiods <- dinm*(24)*(60/time.length.average)
 
-		# define accessory functions 
+		# print(nperiods)
+		# create output array
+		startdate <- ymd(paste(year,mon,"01"))
+		if (!is.na(nperiods) & nperiods > 0) {
+			  time.averages.array <- as.numeric(as.POSIXct(startdate + c(0:nperiods) * minutes(time.length.average),origin="1970-01-01"))
+		  
+			# data.time.array
+			data.time.array <- as.numeric(as.POSIXct(ymd_hms(paste(ambient.data.frame$YYYY,ambient.data.frame$MM,
+				ambient.data.frame$DD,ambient.data.frame$hh,ambient.data.frame$mm,ambient.data.frame$ss)),origin="1970-01-01"))
 
-		# this function - get.time.indices - is obnoxiously slow.
-		get.time.indices <- function(i) {
-			# attempts to speed up this function - it's the worst!
-			# tsubset <- data.time.array[seq(1,length(data.time.array),500)]
-			# print(tsubset)
-			# closest.ind <- which(tsubset-time.averages.array[i] == min(tsubset-time.averages.array[i]))
-			# print(closest.ind)
-			# # narrows the next step down from ~2 million lines to ~20,000
-			# ind.subset <- max(c(1,500*(closest.ind-20))):min(c(length(data.time.array),500*(closest.ind-20)))
+			# define accessory functions 
 
- 			# print(ind.subset)
- 			# 	output <- which(data.time.array[ind.subset] >= time.averages.array[i-1] & 
- 			# 		data.time.array[ind.subset] < time.averages.array[i])
- 			# 	return(output)
-	   
-			## old, slow version
-			 	output <- which(data.time.array >= time.averages.array[i-1] & 
-			 		data.time.array < time.averages.array[i])
+			# this function - get.time.indices - is obnoxiously slow.
+			get.time.indices <- function(i) {
+				# attempts to speed up this function - it's the worst!
+				# tsubset <- data.time.array[seq(1,length(data.time.array),500)]
+				# print(tsubset)
+				# closest.ind <- which(tsubset-time.averages.array[i] == min(tsubset-time.averages.array[i]))
+				# print(closest.ind)
+				# # narrows the next step down from ~2 million lines to ~20,000
+				# ind.subset <- max(c(1,500*(closest.ind-20))):min(c(length(data.time.array),500*(closest.ind-20)))
 
- 			# return list of indices that correspond to desired time interval
- 			return(output)
-		}
+	 			# print(ind.subset)
+	 			# 	output <- which(data.time.array[ind.subset] >= time.averages.array[i-1] & 
+	 			# 		data.time.array[ind.subset] < time.averages.array[i])
+	 			# 	return(output)
+		   
+				## old, slow version
+				 	output <- which(data.time.array >= time.averages.array[i-1] & 
+				 		data.time.array < time.averages.array[i])
 
-	  	get.time.mean <- function(i) {
-	  		if (length(time.inds[[i]]) >= minimum.points.to.average) {
-	  			output <- colMeans(ambient.data.frame[time.inds[[i]],],na.rm=TRUE)
-	  		}
-	  	}
-	  
-	  	if (useParallel==TRUE) {
-			# loop through times, find indices within each time window, and average variables over them
-			cl <- makeCluster(no_cores)
+	 			# return list of indices that correspond to desired time interval
+	 			return(output)
+			}
 
-			# send variables from L0_user_specs.R to cluster...
-			clusterExport(cl=cl,varlist=c("minimum.number.of.datapoints"))
-			
-			# print that we're starting parallel loop
-			print(paste(Sys.time()," finding indices associated with each averaging period..."))
-			time.inds <- parLapply(cl,2:(length(time.averages.array)+1),get.time.indices)
+		  	get.time.mean <- function(i) {
+		  		if (length(time.inds[[i]]) >= minimum.points.to.average) {
+		  			output <- colMeans(ambient.data.frame[time.inds[[i]],],na.rm=TRUE)
+		  		}
+		  	}
+		  
+		  	if (useParallel==TRUE) {
+				# loop through times, find indices within each time window, and average variables over them
+				cl <- makeCluster(no_cores)
 
-			# loop through index lists and make column averages
-			print(paste(Sys.time()," averaging columns in data frame..."))
-			tmp.output <- parLapply(cl,1:(length(time.averages.array)),get.time.mean)
+				# send variables from L0_user_specs.R to cluster...
+				clusterExport(cl=cl,varlist=c("minimum.number.of.datapoints"))
+				
+				# print that we're starting parallel loop
+				print(paste(Sys.time()," finding indices associated with each averaging period..."))
+				time.inds <- parLapply(cl,2:(length(time.averages.array)+1),get.time.indices)
 
-			stopCluster(cl)
+				# loop through index lists and make column averages
+				print(paste(Sys.time()," averaging columns in data frame..."))
+				tmp.output <- parLapply(cl,1:(length(time.averages.array)),get.time.mean)
+
+				stopCluster(cl)
+
+		  	} else {
+		  		print("Processing ambient data using serial code...")
+		  		time.inds <- vector("list",length(time.averages.array))
+		  		tmp.output <- vector("list",length(time.averages.array))
+
+		  		for (j in 1:length(time.averages.array)) {
+		  			time.inds[[j]] <- get.time.indices(j)
+		  			tmp.output[[j]] <- get.time.mean(j)
+		  		}
+		  	}
+
+		  	# bind rows together
+		  	reduced.ambient.data <- do.call(rbind,tmp.output)
+	  		
+	  		# print end of function statement...
+			if (dbg.level>0) {
+				print("end reduce.ambient.data function...")
+				print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+			}	
+
+		  	# return the vector
+		  	return(reduced.ambient.data)
 
 	  	} else {
-	  		print("Processing ambient data using serial code...")
-	  		time.inds <- vector("list",length(time.averages.array))
-	  		tmp.output <- vector("list",length(time.averages.array))
+	  		print("this date has no ambient data - appears to be all calibration data or no data")
+	  		  	# print end of function statement...
+			if (dbg.level>0) {
+				print("end reduce.ambient.data function...")
+				print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+			}	
+	  		return(NULL)
+		} # end if statement re: nperiods
 
-	  		for (j in 1:length(time.averages.array)) {
-	  			time.inds[[j]] <- get.time.indices(j)
-	  			tmp.output[[j]] <- get.time.mean(j)
-	  		}
-	  	}
-
-	  	# bind rows together
-	  	reduced.ambient.data <- do.call(rbind,tmp.output)
-  		
-  		# print end of function statement...
-		if (dbg.level>0) {
-			print("end reduce.ambient.data function...")
-			print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-		}	
-
-	  	# return the vector
-	  	return(reduced.ambient.data)
-
-  	} else {
-  		print("this date has no ambient data - appears to be all calibration data or no data")
-  		  	# print end of function statement...
-		if (dbg.level>0) {
-			print("end reduce.ambient.data function...")
-			print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-		}	
-  		return(NULL)
-	} # end if statement re: nperiods
+	}
 }
 
 # compile function
