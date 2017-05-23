@@ -4,7 +4,13 @@ This repository contains scripts to process raw log file data from a Picarro L21
 
 **The location of this repository is likely to change once development settles down! Its final home will likely be in the SPATIAL Lab Group GitHub page**
 
-While this currently works on L2130-i analyzers only, we are interested in broadening this to more analyzer platforms. Please contact Rich if you are interested in discussing this. This document will be updated as the code is updated (and also provides a few hints at current development priorities)
+While this currently works on L2130-i analyzers only, we are interested in broadening this to more analyzer platforms. Please contact Rich (rich.fiorella@utah.edu) if you are interested in discussing this. This document will be updated as the code is updated (and also provides a few hints at current development priorities)
+
+### Required packages:
+lubridate, zoo, RColorBrewer
+
+### Suggested packages:
+- xts (speeds up L0 processing by about 80% in my testing, ~30 seconds per day with base, ~7 seconds per day with xts)
 
 ### Usage:
 This repository contains three directories: (1) scripts, which contains the executable scripts to process the data, (2) functions, which contains functions called by the associated script files - these can be quite long and are removed from the script file to help with file readability, and (3) metadata_templates, which contains examples of the data that is expected to go into file headers at each stage of data processing. 
