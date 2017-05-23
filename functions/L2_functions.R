@@ -71,7 +71,8 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
   # proposing a threshold here of 30 indices.
   tmp <- diff(out1)
 
-  ini.breaks <- out1[c(1e6,tmp)>10]
+  # check to see if this works...
+  ini.breaks <- out1[c(1e6,tmp)>100]
 
   # print previous two vectors if requested by sufficiently high debug level
   if (dbg.level>1) {
@@ -90,6 +91,9 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
   # they may not work in all situations...please check your data and ensure this works for your 
   # data...
   for (i in 1:(length(ini.breaks)-1)) {
+    # kludge fix here if the length of the break points isn't large enough.
+    print(length(calibration.data.frame$EPOCH_TIME[ini.breaks[i]:(ini.breaks[i+1]-1)]))
+    
     tmp.splines <- smooth.spline(calibration.data.frame$EPOCH_TIME[ini.breaks[i]:(ini.breaks[i+1]-1)],
       calibration.data.frame$H2O[ini.breaks[i]:(ini.breaks[i+1]-1)],df=96)
     tmp.spline.deriv <- c(NA,diff(tmp.splines$y)) # initial NA required to keep vector same length.
@@ -218,11 +222,11 @@ calculate.spline.derivatives <- function(spline.fits,breaks,dbg.level=0) {
     temp7 <- c(NA,diff(temp2))
     temp8 <- c(NA,diff(temp3))
 
-    #if (dbg.level>1) {
+    if (dbg.level>1) {
       print(i)  
       print(paste(length(temp1),length(temp2),length(temp3),length(temp4),
         length(temp5),length(temp6),length(temp7),length(temp8)))
-    #}
+    }
 
     spline.derivatives[[i]] <- data.frame("d_H2O"=temp1,"d_d18O"=temp2,"d_d2H"=temp3,"time"=temp4,"inds"=temp5,
       "d2_H2O"=temp6,"d2_d18O"=temp7,"d2_d2H"=temp8)
@@ -436,6 +440,9 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
 
         temp16[i] <- 60*coef(Hmod)[[2]]
         temp17[i] <- summary(Hmod)$r.squared
+
+       
+
       } else {
         #print("No inds for this period...")
       } # end check for good inds.
@@ -448,6 +455,12 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
     "H2O.range"=temp10,"d18O.range"=temp11,"d2H.range"=temp12,
     "ind.count"=temp13,"d18O.trend"=temp14,"d18O.r2trend"=temp15,
     "d2H.trend"=temp16,"d2H.r2trend"=temp17)
+
+  # kludge fix - remove any rows where all the values are zero? not sure why this 
+  # is happening.
+  pts <- which(std.avgs$time.mean==0)
+
+  if (length(pts)>0) {std.avgs <- std.avgs[-pts,]}
 
   # print statment denoting the end of this function
   if (dbg.level>0) {
