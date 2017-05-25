@@ -55,87 +55,121 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
   if (!"EPOCH_TIME" %in% colnames(calibration.data.frame)) {
     stop("Expected time array absent from input data frame, check input data to ID.calib.breakpoints")
   }
-  tmp <- diff(calibration.data.frame$EPOCH_TIME)
+
+  # rebuilding for version 1.1.0.
+
+  # want to find: points with large differences in time or moving average H2O and
+  # define as separate peaks.
   # note that diff returns the difference between point i and i+1 at index i
   # ...when pulling out the indices that indicate the start of the subsequent 
   # analysis, these are at index i+1, which has been returned at index i - so
   # need to add 1 to the indices returned by diff 
-  out1 <- which(tmp>thres)+1
+  #------------------------------------------------------
+  # first, find time inds.
+  #------------------------------------------------------
+  time.diffs <- diff(calibration.data.frame$EPOCH_TIME)
 
-  # add points to the beginning and end of the array to fully bound first/last plateaus
-  out1 <- c(1,out1,nrow(calibration.data.frame)) 
+  # find which inds are above time threshold.
+  time.inds <- which(time.diffs>thres) + 1
 
-  # in cases of power failure or some other hiccup, sometimes two consecutive points
-  # can be identified as break points...this causes havoc in the spline fitting
-  # process, and therefore, points that are too close to each other must be filtered out.
-  # proposing a threshold here of 30 indices.
-  tmp <- diff(out1)
+  # caluclate moving average of H2O data frame.
+  h2o.smth <- rollapply(calibration.data.frame$H2O,
+      width=210, # corresponds to ~30 seconds of 1.16 Hz data
+      FUN=median, # running mean
+      fill=NA)  # require that output vector have smae length as input vector
 
-  # check to see if this works...
-  ini.breaks <- out1[c(1e6,tmp)>100]
+  h2o.1st.diff <- c(diff(h2o.smth),NA)
 
-  # print previous two vectors if requested by sufficiently high debug level
-  if (dbg.level>1) {
-    print("Break indices identified solely by time threshold:")
-    print(out1)
-    print("Time differences between these indices:")
-    print(tmp)
-  }
+  #h2o.2nd.diff <- c(diff(h2o.1st.diff),NA)
 
-  # loop through initial break points, calculate splines, ID points where change is huge.
-  fix.break.splines <- vector("list",length(ini.breaks))
+  h2o.inds.tmp <- which(abs(h2o.1st.diff) > 100) + 1
+
+  # need to trim h2o.inds! lots of consecutive points...
+  h2o.inds <- h2o.inds.tmp[c(1,which(diff(h2o.inds.tmp)>210)+1,length(h2o.inds.tmp))]
+
+  joined <- unique(sort(c(h2o.inds,time.inds)))
+
+  # remove points that are essentially adjacent - this occurs when both the time and the
+  # h2o diff filters detect a peak.
+  all.breaks <- c(1,joined[which(diff(joined)>30)],nrow(calibration.data.frame))
+
+  # print(joined)
+  # print(all.breaks)
+  # # tmp <- diff(calibration.data.frame$EPOCH_TIME)
   
-  # calculate splines
+  # out1 <- which(tmp>thres)+1
 
-  # NOTE: in this portion of the script, df and the threshold derivative value are TUNED parameters
-  # they may not work in all situations...please check your data and ensure this works for your 
-  # data...
-  for (i in 1:(length(ini.breaks)-1)) {
-    # kludge fix here if the length of the break points isn't large enough.
-    print(length(calibration.data.frame$EPOCH_TIME[ini.breaks[i]:(ini.breaks[i+1]-1)]))
-    
-    tmp.splines <- smooth.spline(calibration.data.frame$EPOCH_TIME[ini.breaks[i]:(ini.breaks[i+1]-1)],
-      calibration.data.frame$H2O[ini.breaks[i]:(ini.breaks[i+1]-1)],df=96)
-    tmp.spline.deriv <- c(NA,diff(tmp.splines$y)) # initial NA required to keep vector same length.
-    # print(paste(i,max(tmp.spline.deriv)))
-    # find indices where derivative is "exceedingly" far from zero
-    tmp.inds <- which(abs(tmp.spline.deriv)>50) # 
-    tmp.inds.diff <- c(NA,diff(tmp.inds)) # add initial NA to keep tmp.inds and tmp.inds.diff the same length
-    # tmp.inds.diff indicates large index gaps between points with large derivatives.
-    # to separate out distinct calibration periods, we seek to find when the difference
-    # between points is greater than about 3 minutes. L2130i collects data at ~1.25 Hz,
-    # so 3 minutes corresponds to ~225 indices.
-    fix.break.splines[[i]] <- ini.breaks[i]+tmp.inds[which(tmp.inds.diff >= 225)]
-  }
+  # # add points to the beginning and end of the array to fully bound first/last plateaus
+  # out1 <- c(1,out1,nrow(calibration.data.frame)) 
+
+  # # in cases of power failure or some other hiccup, sometimes two consecutive points
+  # # can be identified as break points...this causes havoc in the spline fitting
+  # # process, and therefore, points that are too close to each other must be filtered out.
+  # # proposing a threshold here of 30 indices.
+  # tmp <- diff(out1)
+
+  # # check to see if this works...
+  # ini.breaks <- out1[c(1e6,tmp)>36] # needs to be at least as large as width specified below in rollapply
+
+  # # print previous two vectors if requested by sufficiently high debug level
+  # if (dbg.level>1) {
+  #   print("Break indices identified solely by time threshold:")
+  #   print(out1)
+  #   print("Time differences between these indices:")
+  #   print(tmp)
+  # }
+
+  # print(ini.breaks)
+  # # loop through initial break points and find large changes in H2O concentration
+  # # not associated with big gaps in time - this will be important to pull apart
+  # # analyses of the same standard and different [H2O] using the Picarro SDM.
+
+  # non.time.breaks <- vector("list",length(ini.breaks))
   
-  # unlist indices in fix.break.splines and add to ini.breaks
-  addl.breaks <- unlist(fix.break.splines,use.names=FALSE)
+  # # calculate splines
+  # for (i in 2:(length(ini.breaks))) {
+  #   # create a vector of a running average of the H2O concentration
+  #   smth.tmp <- rollapply(calibration.data.frame$H2O[ini.breaks[i-1]:ini.breaks[i]],
+  #     width=35, # corresponds to ~30 seconds of 1.16 Hz data
+  #     FUN=mean, # running mean
+  #     fill=NA)  # require that output vector have smae length as input vector
 
-  # add additional breaks to initial break column and sort.
-  fin.breaks.tmp <- sort(c(ini.breaks,addl.breaks))
-  fin.diff.tmp <- c(1e6,diff(fin.breaks.tmp))
+  #   # take the first order difference of running average H2O concentration
+  #   diff.smth.tmp <- c(NA,diff(smth.tmp)) # add extra NA to keep diff.smth.tmp same length as smth.tmp
+
+  #   # find points where change is "large" and point is sufficiently far away from time based break points
+  #   # (let's say, 3 minutes.)
+  #   non.time.breaks[[i]] <- which(abs(diff.smth.tmp[1:(length(diff.smth.tmp)-70)]) > 50) 
+
+  # }
   
-  # require difference between points to be >3 minutes (e.g., there is no calibration cycle
-  # shorter than 3 minutes) - this is likely a conservative threshold (could be higher!) - 
-  # but it seems to be sufficient in most cases.
+  # # unlist indices in fix.break.splines and add to ini.breaks
+  # addl.breaks <- unlist(non.time.breaks,use.names=FALSE)
+
+  # # add additional breaks to initial break column and sort.
+  # fin.breaks.tmp <- sort(c(ini.breaks,addl.breaks))
   
-  # NOTE: important to be careful about where the additional value goes to make the diff output
-  # the same length as the diff input. in many cases it's desirable to know at index i what the
-  # difference is between index i and index i-1 (this is the fin.diff.temp construction above).
-  # it is most useful here to know if the difference between index i and i+1 is <= a threshold.
-  # therefore, the final "spare" value is placed at the end of the array.
-  time.diff <- which(c(diff(calibration.data.frame$EPOCH_TIME[fin.breaks.tmp]),1e6)>180)
-  array.diff <- which(c(diff(fin.breaks.tmp),1e6)>225)
+  # dbg.level <- 2
+  # if (dbg.level > 1) {
+  #   print(ini.breaks)
+  #   print(addl.breaks)
+  #   print(fin.breaks.tmp)
+  # }
 
-  fin.breaks <- fin.breaks.tmp[intersect(time.diff,array.diff)]
+  # # require points to be: (a) nonconsecutive, and (b)
+  # # at least 3 minutes apart.
+  # fin.breaks <- fin.breaks.tmp[which(diff(fin.breaks.tmp) > 70)+1]
 
-  # print statment denoting the end of this function
-  if (dbg.level>0) {
-    print("ending ID.calib.breakpoints function")
-    print("++++++++++++++++++++++++++++++++++++")
-  }
+  # #print(diff(fin.breaks.tmp))
+  # print(fin.breaks)
 
-  return(fin.breaks)
+  # # print statment denoting the end of this function
+  # if (dbg.level>0) {
+  #   print("ending ID.calib.breakpoints function")
+  #   print("++++++++++++++++++++++++++++++++++++")
+  # }
+
+  return(all.breaks)
 }
 
 #------------------------------------------------------------------------------------------
@@ -249,7 +283,12 @@ calculate.spline.derivatives <- function(spline.fits,breaks,dbg.level=0) {
 # is somewhat large, but a lot is done under the hood and doesn't need to be stored in memory 
 # following calculation. 
 
-extract.stable.calib.indices <- function(spline.derivatives,H2O.thres=5.0,d18O.thres=0.01,d2H.thres=0.1,dbg.level=0) {
+# v110 change - a bit of a thorny issue where often at the beginning of an analysis, there's a local
+# min/max that gets included in the peak. Most direct way to exclude this is just to restrict the
+# values that are returned to be only in the last ~75% (tuned parameter!) of the peak.
+
+extract.stable.calib.indices <- function(spline.derivatives,H2O.thres=5.0,d18O.thres=0.01,d2H.thres=0.1,
+  cut.in.span=0.20,cut.out.span=0.05,dbg.level=0) {
   # print statement indicating that this function is starting
   if (dbg.level>0) {
     print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
@@ -266,13 +305,29 @@ extract.stable.calib.indices <- function(spline.derivatives,H2O.thres=5.0,d18O.t
 
   # loop through and pull out list of inds to keep for each "plateau"
   for (i in 1:length(spline.derivatives)) {
-  indvec <- vector("logical",length(spline.derivatives[[i]]$inds))
-  #print(indvec)
-  indvec <- !(abs(spline.derivatives[[i]]$d_H2O) > H2O.thres |
-    abs(spline.derivatives[[i]]$d_d18O) > d18O.thres |
-    abs(spline.derivatives[[i]]$d_d2H) > d2H.thres)
-  #print(indvec)
-  inds.to.keep[[i]] <- spline.derivatives[[i]]$inds[indvec]
+    indvec <- vector("logical",length(spline.derivatives[[i]]$inds))
+    #print(indvec)
+    indvec <- !(abs(spline.derivatives[[i]]$d_H2O) > H2O.thres |
+      abs(spline.derivatives[[i]]$d_d18O) > d18O.thres |
+      abs(spline.derivatives[[i]]$d_d2H) > d2H.thres)
+    #print(indvec)
+
+    # set all values in the cutin and cutout periods to false!
+    # --------------------------------------------
+    # get nearest index to cutin period fraction.
+    # floor ensures return value is an integer!
+    cutin.max <- floor(cut.in.span*length(spline.derivatives[[i]]$inds))
+    # set values in cut in region to false.
+    indvec[1:cutin.max] <- FALSE
+
+    # now repeat for cutout span.
+    cutout.min <- ceiling((1-cut.out.span)*length(spline.derivatives[[i]]$inds))
+    # set values in cut.out region to false.
+    indvec[cutout.min:length(indvec)] <- FALSE 
+
+    # store TRUE values in inds.to.keep list for this measurement, 
+    # and move on to the next measurement.
+    inds.to.keep[[i]] <- spline.derivatives[[i]]$inds[indvec]
   }
   # print statment denoting the end of this function
   if (dbg.level>0) {

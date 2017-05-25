@@ -102,8 +102,8 @@ for (i in 1:nmonths) {
 
     # split the file name to extract the date
     tmp <- strsplit(subset.list[[fcount]],split="_")
-    file.month <- month(tmp[[1]][7]) # index 7 of resulting list has the date info
-    file.year <- year(tmp[[1]][7])   # index 7 of resulting list has the date info
+    file.month <- month(tmp[[1]][7]) # index 7 of resulting list has the date info with current directory structure
+    file.year <- year(tmp[[1]][7])   # index 7 of resulting list has the date info with current directory structure
 
     # logical test - does the mm/yy of the file match our expectations?
     if (desired.month != file.month | desired.year != file.year) {
@@ -152,12 +152,12 @@ for (i in 1:nmonths) {
     }
     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-# 	# now that we have nice smooth splines, estimate derivatives...
+    # now that we have nice smooth splines, estimate derivatives...
  	spline.derivatives <- calculate.spline.derivatives(spline.fits,breaks,dbg.level=debug)
 
-#     #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#     # DIAGNOSTIC PLOT 2: plot the first derivative of each identified peak period
-#     # to help identify suitable thresholds for identifying stable portions of peaks.
+    #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    # DIAGNOSTIC PLOT 2: plot the first derivative of each identified peak period
+    # to help identify suitable thresholds for identifying stable portions of peaks.
 
     if (RUN_PLOTS) {
         print("Making plot of spline derivatives...")
@@ -267,9 +267,9 @@ for (i in 1:nmonths) {
                         mean(calib.data$EPOCH_TIME[good.inds[[zz]]],na.rm=TRUE))
                     camean <- calib.avgs[[i]]$time.mean[yy]
 
-                    print(paste(xx,yy,zz))
-                    print(paste(tmpmin,tmpmax,calib.avgs[[i]]$time.mean[yy]))
-                    print(paste(tmpmin,tmpmax,gimean))
+                    # print(paste(xx,yy,zz))
+                    # print(paste(tmpmin,tmpmax,calib.avgs[[i]]$time.mean[yy]))
+                    # print(paste(tmpmin,tmpmax,gimean))
 
                     # first test: was a peak found?
                     #print(paste(j,z,k,tmpmin,tmpmax,gimean,camean))
@@ -361,6 +361,7 @@ for (i in 1:nmonths) {
     # DIAGNOSTIC PLOT 4: plots mean/sd values for H2O, delta18O, and delta2H 
     # by month. 
     if (RUN_PLOTS) {
+        print("Running diagnostic plot 4...")
         if (length(calib.avgs) > 0) {
             if (!is.null(calib.avgs[[i]]) == TRUE & length(calib.avgs[[i]]) > 0) {
                 # plot monthly average data
@@ -441,12 +442,12 @@ for (i in 1:nmonths) {
 
     # Add some logging data to help track what's going on in this code...
     # print(paste(i,nmonths,length(spline.fits)))
-    log.yyyy[i] <- file.year
-    log.mm[i] <- file.month
-    log.nosplines[i] <- nrow(spline.fits[[i]])
-    log.noderivsp[i] <- nrow(spline.derivatives[[i]])
-    log.nogoodind[i] <- length(good.inds)
-    log.calibavgs[i] <- ifelse(is.list(calib.avgs[[i]]) & length(calib.avgs[[i]])!=0,nrow(calib.avgs[[i]]),0)
+    # log.yyyy[i] <- file.year
+    # log.mm[i] <- file.month
+    # log.nosplines[i] <- nrow(spline.fits[[i]])
+    # log.noderivsp[i] <- nrow(spline.derivatives[[i]])
+    # log.nogoodind[i] <- length(good.inds)
+    # log.calibavgs[i] <- ifelse(is.list(calib.avgs[[i]]) & length(calib.avgs[[i]])!=0,nrow(calib.avgs[[i]]),0)
 
     # clean up variables that don't need to be carried to next i
     # rm(spline.fits)
@@ -456,8 +457,8 @@ for (i in 1:nmonths) {
 } # end looping through months.
 
 # create log data frame
-log.df <- data.frame("yyyy"=log.yyyy,"mm"=log.mm,"spline.count"=log.nosplines,
-    "spline.derivative.count"=log.noderivsp,"std.average.count"=log.calibavgs)
+# log.df <- data.frame("yyyy"=log.yyyy,"mm"=log.mm,"spline.count"=log.nosplines,
+#     "spline.derivative.count"=log.noderivsp,"std.average.count"=log.calibavgs)
 
 ######################################################################################################
 # COMBINE ALL CALIBRATION DATA POINTS 
