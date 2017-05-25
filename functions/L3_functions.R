@@ -72,8 +72,28 @@ attach.L3.Header <- function(output_filename,metadata_dataframe,dbg.level=0) {
   }
 }
 
+#---------------------------------------------------------
+# reduce.calibrated.ambient.vapor
 
+reduce.calibrated.ambient.vapor <- function(amb.df,interval.in.minutes) {
+  use.xts <- require(xts)
 
+  if (use.xts==TRUE) {
+      # print statement detailing what this function does...
+    print(paste(Sys.time()," Reducing ambient data to ",interval.in.minutes," minute averages"))
+    dframe <- as.xts(amb.df,
+      order.by=as.POSIXct(amb.df$EPOCH_TIME,tz="UTC",origin="1970-01-01"))
 
+    # get endpoints
+    eps <- endpoints(dframe,on="minutes",k=interval.in.minutes)
+
+      
+    # take mean.
+    dframe.reduced <- period.apply(dframe,eps,mean)
+    print("Okay here!")
+    # return data
+    return(as.data.frame(coredata(dframe.reduced)))
+  }
+}
 
 

@@ -9,7 +9,7 @@ rm(list=ls())
 # cons: - hard to pull out nearest ambient value. 
 
 library(lubridate)
-library(zoo)
+library(xts)
 
 # load calibration parameters 
 source("../functions/L3_functions.R")
@@ -50,6 +50,7 @@ log.pct  <- vector()
 # SET UP METADATA HEADERS
 # Get metadata from an L1 file in here to pass along to L2 header...
 tmp <- readLines(raw.file.list[[1]]) # get first calibration file.
+md.frame <- tmp[grep("#",tmp)] # pull out lines starting with comment character...
 
 # BEGIN LOOPING THROUGH MONTHS.
 
@@ -121,27 +122,31 @@ for (j in 1:nmonths) {
         }
     }
 
+    # bind calibrated variables to ambient df
+    ambient.data <- cbind(ambient.data,Delta_18_16_vsmow)
+    ambient.data <- cbind(ambient.data,Delta_D_H_vsmow)
+
+    # average down to desired time interval.
+    ambient.data <- reduce.calibrated.ambient.vapor(ambient.data,out.interval)
+
     # print a quick diagnostic plot
     pdf(paste("diag_plots/ambientData_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
     plot(ambient.data$EPOCH_TIME,ambient.data$H2O,pch=".")
 
     plot(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16,pch=".")
-    points(ambient.data$EPOCH_TIME,Delta_18_16_vsmow,pch=".",col="red")
+    points(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16_vsmow,pch=".",col="red")
 
     plot(ambient.data$EPOCH_TIME,ambient.data$Delta_D_H,type="l")
-    points(ambient.data$EPOCH_TIME,Delta_D_H_vsmow,pch=".",col="red")
+    points(ambient.data$EPOCH_TIME,ambient.data$Delta_D_H_vsmow,pch=".",col="red")
 
     dev.off()
 
-
-    pdf(paste("diag_plots/ambientData_diff_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
-    plot(Delta_18_16_vsmow-ambient.data$Delta_18_16,type="l")
-    dev.off()
+    # pdf(paste("diag_plots/ambientData_diff_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
+    # plot(Delta_18_16_vsmow-ambient.data$Delta_18_16,type="l")
+    # dev.off()
     # Save L3 file
 
-    # bind calibrated variables to ambient df
-    ambient.data <- cbind(ambient.data,Delta_18_16_vsmow)
-    ambient.data <- cbind(ambient.data,Delta_D_H_vsmow)
+
 
     print(paste("Saving calibrated ambient data"))
    
