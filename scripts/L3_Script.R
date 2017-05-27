@@ -131,9 +131,9 @@ for (j in 1:nmonths) {
 
     # print a quick diagnostic plot
     pdf(paste("diag_plots/ambientData_",file.year,"_",file.month,".pdf",sep=""),width=11,height=8)
-    plot(ambient.data$EPOCH_TIME,ambient.data$H2O,pch=".")
+    plot(ambient.data$EPOCH_TIME,ambient.data$H2O,type="l")
 
-    plot(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16,pch=".")
+    plot(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16,type="l")
     points(ambient.data$EPOCH_TIME,ambient.data$Delta_18_16_vsmow,pch=".",col="red")
 
     plot(ambient.data$EPOCH_TIME,ambient.data$Delta_D_H,type="l")
