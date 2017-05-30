@@ -9,21 +9,25 @@
 ###################################################################
 # SECTION 1: Dates to run, data location, include debugging?
 
+# ALL PATHS REQUIRE TRAILING SLASH!! (e.g., all paths below - at least on Unix/os X - 
+# require forward slash at end of the path!)
+
 # 1a. what dates should we process? script works sequentially on dates from startdate to enddate.
 
-start.date <- ymd("2016-03-01")
-end.date <- ymd("2016-04-01")
+start.date <- ymd("2013-12-01")
+end.date <- ymd("2014-04-01")
 
 # 1b. where is the data we're processing? and where should we save output data?
-path.to.L1.data <- "~/VaporData/WBB_VAPOR/L1/v1beta/"
-path.to.output.L2.data <-  "~/VaporData/WBB_VAPOR/L2/testing/"
+path.to.L1.data <- "~/VaporData/WBB_VAPOR/L1/v110beta/"
+path.to.output.L2.data <-  "~/VaporData/WBB_VAPOR/L2/v110beta/w1314/"
 
 # 1c. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
 output.file.prefix <- "WBB_Water_Vapor"
 
-# 1d. should we run diagnostic plots? (logical value)
+# 1d. should we run diagnostic plots? (logical value) and where should they be written?
 RUN_PLOTS <- TRUE
+plot.path <- "~/VaporData/WBB_VAPOR/L2/diag_plots/"
 
 # 1e. Is debugging necessary? This parameter will help determine why code is crashing.
 debug <- 0
@@ -209,7 +213,7 @@ stiff.spline.dfs <- 12 # number of degrees of freedom in "stiff" splines fit to 
 # IMPORTANT NOTE: IF YOU CHANGE STIFF.SPLINE.DFS YOU *MUST* RECHECK THESE
 # DERIVATIVES - THEY ARE TUNED BASED ON A VALUE OF 12!
 
-H2O.thres <- 5.0
+H2O.thres <- 20.0
 d18O.thres <- 0.01
 d2H.thres <- 0.1
 
@@ -247,4 +251,3 @@ d18O.sdev.thres <- 1      # maximum standard deviation for d18O allowed
 d2H.sdev.thres <- 8       # maximum standard deviation for d2H allowed
 max.length.thres <- 4200  # maximum number of indices allowed (at 1.16 Hz, 4200 = 1 hour)
 min.length.thres <- 35    # minimum number of indices required (at 1.16 Hz, 35 = 30 seconds)
-

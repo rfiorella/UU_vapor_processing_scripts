@@ -2,15 +2,16 @@
 # richf, 27jan17
 
 # combined script meant to calibrate Picarro vapor data - relies on the water vapor calibration functions
-#rm(list=ls())
+rm(list=ls())
 
 # LOAD REQUIRED LIBRARIES
 #==========================================================================
-#library(data.table)
 library(lubridate)
 library(zoo)
 library(RColorBrewer)
 
+# LOAD ASSOCIATED R CODE
+#==========================================================================
 # load associated functions
 source("../functions/L2_functions.R")
 
@@ -18,7 +19,8 @@ source("../functions/L2_functions.R")
 source("../user/L2_user_specs.R")
 
 #--------------------------------------------------------------------------
-# Begin processing calibration data...
+# Begin L2 Data processing
+#--------------------------------------------------------------------------
 
 print("==================================================================")
 print(paste("Starting L2 Processing : ",now()))
@@ -31,6 +33,7 @@ period <- interval(start.date,end.date)
 # (script is designed to work on complete months) 
 nmonths <- period %/% months(1)
 
+#---------------------------------------------------
 # Make lists of relevant *CALIBRATION* data files
 #---------------------------------------------------
 # make an empty list to hold all raw file names
@@ -76,12 +79,29 @@ log.calibavgs <- vector("numeric",nmonths)
 fcount <- 1
 gcount <- 1 # perhaps not necessary, but coding defensively here in a rush...
 
+#---------------------------------------------------------------------
 # SET UP METADATA HEADERS
 # Get metadata from an L1 file in here to pass along to L2 header...
 tmp <- readLines(raw.file.list[[1]]) # get first calibration file.
 
 md.frame <- tmp[grep("#",tmp)] # pull out lines starting with comment character...
 
+#`````````````````````````````````````````````````````````````````````
+# SET UP PLOTTING RESOURCES
+#`````````````````````````````````````````````````````````````````````
+
+if (RUN_PLOTS==TRUE) { # if we are running the diagnostic plots,
+    # create a directory in plotting diag plot outpud directory that captures
+    # script runtime.
+
+    plot.path <- paste(plot.path,toString(base::date()),"/",sep="") # append current time to plot path
+    # note: call to base::date is required as lubridate is loaded!!!
+
+    # create output directory file path.
+    dir.create(plot.path,recursive=TRUE)
+}
+
+#-------------------------------------------------------------------------------
 # OK, after setting up everything, start looping through the months requested...
 for (i in 1:nmonths) {
 	# print status header.
@@ -136,7 +156,7 @@ for (i in 1:nmonths) {
     if (RUN_PLOTS) {
         # make plots of the identified peaks with associated splines.
         print("Making plot showing calibration data and calculated splines...")
-        pdf(paste("diag_plots/calib_raw_peakssplines_",time.suffix,".pdf",collapse="",sep=""),width=11,height=8)
+        pdf(paste(plot.path,"calib_raw_peakssplines_",time.suffix,".pdf",collapse="",sep=""),width=11,height=8)
         par(mfrow=c(3,1),mar=c(4,4,1,1),oma=c(0,0,3,0))
         for (k in 1:length(spline.fits)) {
             plot(calib.data$EPOCH_TIME[breaks[k]:(breaks[k+1]-1)],calib.data$H2O[breaks[k]:(breaks[k+1]-1)])
@@ -162,7 +182,7 @@ for (i in 1:nmonths) {
     if (RUN_PLOTS) {
         print("Making plot of spline derivatives...")
         # make plots of the spline derivatives.        
-        pdf(paste("diag_plots/raw_data_splinederivs_",time.suffix,".pdf",collapse="",sep=""),width=11,height=8)
+        pdf(paste(plot.path,"raw_data_splinederivs_",time.suffix,".pdf",collapse="",sep=""),width=11,height=8)
         par(mfrow=c(3,1),mar=c(4,4,1,1),oma=c(0,0,3,0))
         for (k in 1:length(spline.derivatives)) { 
                 plot(spline.derivatives[[k]]$d_H2O,type="l",ylim=c(-50,50))
@@ -231,7 +251,7 @@ for (i in 1:nmonths) {
     if (RUN_PLOTS) {
         print("Running diagnostic plot 3...")
         # plot the data after identifying plateaus using splines
-        pdf(paste("diag_plots/spline_selected_points_",time.suffix,".pdf",
+        pdf(paste(plot.path,"spline_selected_points_",time.suffix,".pdf",
             collapse="",sep=""),width=11,height=8)
         par(mfrow=c(3,1),mar=c(4,4,1,1),oma=c(0,0,3,0))
         mycols <- rainbow(8)
@@ -365,7 +385,7 @@ for (i in 1:nmonths) {
         if (length(calib.avgs) > 0) {
             if (!is.null(calib.avgs[[i]]) == TRUE & length(calib.avgs[[i]]) > 0) {
                 # plot monthly average data
-                pdf(paste("diag_plots/monavgs_",time.suffix,".pdf",collapse="",sep=""),width=11,height=8)
+                pdf(paste(plot.path,"monavgs_",time.suffix,".pdf",collapse="",sep=""),width=11,height=8)
                 par(mfrow=c(3,2))
                 mycols <- brewer.pal(6,"Paired")
                 inds <- vector("list",6)
@@ -496,6 +516,16 @@ calib.averages.wamb.mrc.bgc.wstds.filtered <- calib.averages.wamb.mrc.bgc.wstds[
 
 # calculate the correction slopes/intercepts.
 calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds.filtered,dbg.level=debug)
+
+# make diagnostic plots of the calibration periods.
+if (TRUE==FALSE) { # replace me when you actually are ready to run this code...
+    print("Running diagnostic plot 5...")
+    # plot the data after identifying plateaus using splines
+    pdf(paste(plot.path,"regression_data_",time.suffix,".pdf",
+        collapse="",sep=""),width=11,height=8)
+    dev.off()
+}
+
 
 #------------------------------------------------------------------------
 # Write out calibration parameters into a data file.
