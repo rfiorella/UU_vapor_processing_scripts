@@ -723,6 +723,11 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
     # ensure that we're working with a data frame...
     stopifnot(is.data.frame(standard.data.frame)) # is this actually necessary?
 
+    # does the data frame actually have data?
+    if (nrow(standard.data.frame)==0) {
+      return(NULL)
+    }
+
     # find the number of calibration periods in the data frame.
     #----------------------------------------------------------
     # however, cannot simply treat these as distinct periods as

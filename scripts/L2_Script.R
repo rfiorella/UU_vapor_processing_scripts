@@ -518,7 +518,7 @@ calib.averages.wamb.mrc.bgc.wstds.filtered <- calib.averages.wamb.mrc.bgc.wstds[
 corrected <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds.filtered,dbg.level=debug)
 
 # make diagnostic plots of the calibration periods.
-if (RUN_PLOTS) { 
+if (RUN_PLOTS & !is.null(corrected)) { 
     print("Running diagnostic plot 5...")
     # plot the data after identifying plateaus using splines
     pdf(paste(plot.path,"regression_data.pdf",
@@ -639,7 +639,7 @@ calib.data.name <- paste(path.to.output.L2.data,output.file.prefix,"_Calibration
 saveRDS(corrected,calib.data.name)
 
 # make a couple quick diagnostic plots of regression parameters
-if (RUN_PLOTS) { 
+if (RUN_PLOTS & !is.null(corrected)) { 
     print("Running diagnostic plot 6...")
     # plot the data after identifying plateaus using splines
     pdf(paste(plot.path,"oxygen_regression_diagnostics.pdf",
