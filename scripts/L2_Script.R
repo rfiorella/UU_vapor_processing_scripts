@@ -491,8 +491,8 @@ ambient.bracket.all <- do.call(rbind,ambient.buffers)
 calib.averages.wamb <- cbind(calib.averages.all,ambient.bracket.all)
 
 # correct for delta dependence on concentration
-calib.averages.wamb.mrc <- apply.mixingratio.correction(calib.averages.wamb,fit.type,Oslope,Hslope,
-    dbg.level=debug)
+calib.averages.wamb.mrc <- apply.mixingratio.correction(calib.averages.wamb,
+    fit.type,Oslope,Hslope,dbg.level=debug)
 
 # correct standard values for vapor bleeding through drierite canister...
 calib.averages.wamb.mrc.bgc <- apply.drygas.correction(calib.averages.wamb.mrc,H2O.bg,
@@ -515,14 +515,105 @@ retain.inds <- Reduce(intersect,list(h2o.min,h2o.max,h2o.sd,d18O.sd,d2H.sd,max.l
 calib.averages.wamb.mrc.bgc.wstds.filtered <- calib.averages.wamb.mrc.bgc.wstds[retain.inds,]
 
 # calculate the correction slopes/intercepts.
-calibration.regressions <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds.filtered,dbg.level=debug)
+corrected <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds.filtered,dbg.level=debug)
 
 # make diagnostic plots of the calibration periods.
-if (TRUE==FALSE) { # replace me when you actually are ready to run this code...
+if (RUN_PLOTS) { 
     print("Running diagnostic plot 5...")
     # plot the data after identifying plateaus using splines
-    pdf(paste(plot.path,"regression_data_",time.suffix,".pdf",
+    pdf(paste(plot.path,"regression_data.pdf",
         collapse="",sep=""),width=11,height=8)
+
+    # setup page to give plots for H and O on same page.
+    par(mfrow=c(1,2),mar=c(4,4,1,1),oma=c(0,0,3,0))
+
+    # divide into plots with "perpage" regressions each.
+    #-------------------------------------------
+    perpage <- 3 # how many regressions per page?
+
+    # how many full pages?
+    npages <- nrow(corrected$regression.data) %/% 3
+
+    # set graphical parameters.
+    mycols <- rainbow(perpage)
+    mypchs <- c(2,3,4)
+
+    for (i in 1:npages) {
+        for (j in 1:perpage) {
+
+            # OXYGEN PLOTS
+            #---------------
+            # select indices that correspond to regression to analyze
+            inds <- which(corrected$calib.stds$starts.period == perpage*(i-1)+j |
+                corrected$calib.stds$ends.period == perpage*(i-1)+j)
+            # initiate plot if j = 1, otherwise, add points
+            if (j == 1) {
+                plot(corrected$calib.stds$d18O.mrcbgc[inds],
+                    corrected$calib.stds$known.std.d18O[inds],
+                    xlim=c(min(corrected$calib.stds$d18O.mrcbgc,na.rm=TRUE),
+                        max(corrected$calib.stds$d18O.mrcbgc,na.rm=TRUE)),
+                    ylim=c(-20,5), # tuned to WBB values.    
+                    pch=mypchs[j%%length(mypchs)], # set point style
+                    col=mycols[j]) # set color of points.
+                # add regression line.
+                pid <- which(corrected$regression.data$period.id == 
+                    perpage*(i-1)+j)
+                abline(corrected$regression.data$O.intercept[pid],
+                    corrected$regression.data$O.slope[pid],
+                    col=mycols[j], # set color of regression line.
+                    lty=ifelse(corrected$regression.data$qflag[pid]==1,1,2))
+            } else { # add points and lines.
+                points(corrected$calib.stds$d18O.mrcbgc[inds],
+                    corrected$calib.stds$known.std.d18O[inds],
+                    pch=mypchs[j%%length(mypchs)], # set point style
+                    col=mycols[j]) # set color of points.
+                # add regression lines
+                pid <- which(corrected$regression.data$period.id == 
+                    perpage*(i-1)+j)
+                abline(corrected$regression.data$O.intercept[pid],
+                    corrected$regression.data$O.slope[pid],
+                    col=mycols[j],
+                    lty=ifelse(corrected$regression.data$qflag[pid]==1,1,2))
+            }
+        }
+        
+        for (j in 1:perpage) {
+            # HYDROGEN PLOTS
+            #---------------
+            # select indices that correspond to regression to analyze
+            inds <- which(corrected$calib.stds$starts.period == perpage*(i-1)+j |
+                corrected$calib.stds$ends.period == perpage*(i-1)+j)
+            # initiate plot if j = 1, otherwise, add points
+            if (j == 1) {
+                plot(corrected$calib.stds$d2H.mrcbgc[inds],
+                    corrected$calib.stds$known.std.d2H[inds],
+                    xlim=c(min(corrected$calib.stds$d2H.mrcbgc,na.rm=TRUE),
+                        max(corrected$calib.stds$d2H.mrcbgc,na.rm=TRUE)),
+                    ylim=c(-130,20), # tuned to WBB values.    
+                    pch=mypchs[j%%length(mypchs)], # set point style
+                    col=mycols[j]) # set color of points.
+                # add regression line.
+                pid <- which(corrected$regression.data$period.id == 
+                    perpage*(i-1)+j)
+                abline(corrected$regression.data$H.intercept[pid],
+                    corrected$regression.data$H.slope[pid],
+                    col=mycols[j], # set color of regression line.
+                    lty=ifelse(corrected$regression.data$qflag[pid]==1,1,2))
+            } else { # add points and lines.
+                points(corrected$calib.stds$d2H.mrcbgc[inds],
+                    corrected$calib.stds$known.std.d2H[inds],
+                    pch=mypchs[j%%length(mypchs)], # set point style
+                    col=mycols[j]) # set color of points.
+                # add regression lines
+                pid <- which(corrected$regression.data$period.id == 
+                    perpage*(i-1)+j)
+                abline(corrected$regression.data$H.intercept[pid],
+                    corrected$regression.data$H.slope[pid],
+                    col=mycols[j],
+                    lty=ifelse(corrected$regression.data$qflag[pid]==1,1,2))
+            }
+        }
+    }
     dev.off()
 }
 
@@ -530,40 +621,66 @@ if (TRUE==FALSE) { # replace me when you actually are ready to run this code...
 #------------------------------------------------------------------------
 # Write out calibration parameters into a data file.
 
-print(paste("Saving calibration data in two separate files"))
-print(paste("The first - save all the information about each identified calibration data point..."))
+print(paste("Saving calibration data"))
 
-calib.dt.name <- paste(path.to.output.L2.data,output.file.prefix,"_CalibrationAverages_L2_",
-    start.date,"_",end.date,".dat",sep="")
-
-# attach metadata
-attach.L2.Header(calib.dt.name,md.frame,dbg.level=debug)
-
-# write out data table of calib.averages.wamb.mrc.bgc.wstds
-write.table(calib.averages.wamb.mrc.bgc.wstds,file=calib.dt.name,
-    sep=",",row.names=FALSE,append=TRUE)
-
-# ok, now write out the data file that contains the regression parameters...
-print(paste("The second - save the regression parameters for each period..."))
-
-regress.dt.name <- paste(path.to.output.L2.data,output.file.prefix,"_CalibrationRegressionData_L2_",
-    start.date,"_",end.date,".dat",sep="")
+calib.metadata.name <- paste(path.to.output.L2.data,output.file.prefix,
+    "_CalibrationMetadata_L2_",start.date,"_",end.date,".csv",sep="")
 
 # attach metadata
-attach.L2.Header(regress.dt.name,md.frame,dbg.level=debug)
+attach.L2.Header(calib.metadata.name,md.frame,dbg.level=debug)
 
-# write out datatable.
-write.table(calibration.regressions,file=regress.dt.name,sep=",",row.names=FALSE,append=TRUE)
+# # write out data table of calib.averages.wamb.mrc.bgc.wstds
+# write.table(calib.averages.wamb.mrc.bgc.wstds,file=calib.dt.name,
+#     sep=",",row.names=FALSE,append=TRUE)
+
+calib.data.name <- paste(path.to.output.L2.data,output.file.prefix,"_CalibrationData_L2_",
+    start.date,"_",end.date,".rds",sep="")
+
+saveRDS(corrected,calib.data.name)
 
 # make a couple quick diagnostic plots of regression parameters
-quartz()
-par(mfrow=c(3,1),mar=c(4,4,0.5,0.5))
-plot(calibration.regressions$start.time,calibration.regressions$O.slope)
-plot(calibration.regressions$start.time,calibration.regressions$O.intercept,col="red")
-plot(calibration.regressions$start.time,calibration.regressions$O.r2,col="blue")
+if (RUN_PLOTS) { 
+    print("Running diagnostic plot 6...")
+    # plot the data after identifying plateaus using splines
+    pdf(paste(plot.path,"oxygen_regression_diagnostics.pdf",
+        collapse="",sep=""),width=11,height=8)
+    par(mfrow=c(3,1),mar=c(4,4,0.5,0.5))
 
-quartz()
-par(mfrow=c(3,1),mar=c(4,4,0.5,0.5))
-plot(calibration.regressions$start.time,calibration.regressions$H.slope)
-plot(calibration.regressions$start.time,calibration.regressions$H.intercept,col="green")
-plot(calibration.regressions$start.time,calibration.regressions$H.r2,col="blue")
+    # oxygen plots
+    binds <- which(corrected$regression.data$qflag == 0)
+
+    plot(corrected$regression.data$period.start,corrected$regression.data$O.slope)
+    points(corrected$regression.data$period.start[binds],
+        corrected$regression.data$O.slope[binds],
+        pch=16) # solid circles for bad points.
+    plot(corrected$regression.data$period.start,corrected$regression.data$O.intercept,col="red")
+    points(corrected$regression.data$period.start[binds],
+        corrected$regression.data$O.intercept[binds],
+        pch=16,col="red") # solid circles for bad points.
+    plot(corrected$regression.data$period.start,corrected$regression.data$O.r2,col="blue")
+    points(corrected$regression.data$period.start[binds],
+        corrected$regression.data$O.r2[binds],
+        pch=16,col="blue") # solid circles for bad points.
+
+    dev.off()
+
+    # hydrogen plots
+    pdf(paste(plot.path,"hydrogen_regression_diagnostics.pdf",
+        collapse="",sep=""),width=11,height=8)
+    par(mfrow=c(3,1),mar=c(4,4,0.5,0.5))
+
+    plot(corrected$regression.data$period.start,corrected$regression.data$H.slope)
+    points(corrected$regression.data$period.start[binds],
+        corrected$regression.data$H.slope[binds],
+        pch=16) # solid circles for bad points.
+    plot(corrected$regression.data$period.start,corrected$regression.data$H.intercept,col="red")
+    points(corrected$regression.data$period.start[binds],
+        corrected$regression.data$H.intercept[binds],
+        pch=16,col="red") # solid circles for bad points.
+    plot(corrected$regression.data$period.start,corrected$regression.data$H.r2,col="blue")
+    points(corrected$regression.data$period.start[binds],
+        corrected$regression.data$H.r2[binds],
+        pch=16,col="blue") # solid circles for bad points.
+
+    dev.off()
+}

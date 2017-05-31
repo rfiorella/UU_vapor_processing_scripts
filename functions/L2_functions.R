@@ -57,7 +57,6 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
   }
 
   # rebuilding for version 1.1.0.
-
   # want to find: points with large differences in time or moving average H2O and
   # define as separate peaks.
   # note that diff returns the difference between point i and i+1 at index i
@@ -79,8 +78,6 @@ ID.calib.breakpoints <- function(calibration.data.frame,thres=10,dbg.level=0) {
       fill=NA)  # require that output vector have smae length as input vector
 
   h2o.1st.diff <- c(diff(h2o.smth),NA)
-
-  #h2o.2nd.diff <- c(diff(h2o.1st.diff),NA)
 
   h2o.inds.tmp <- which(abs(h2o.1st.diff) > 100) + 1
 
@@ -122,20 +119,21 @@ fit.calibration.splines <- function(calibration.data.frame,breakpoints,dfree=12,
   # loop through each ID'ed plateau for the desired variable.
   for (i in 1:nplat) {
     # fit splines.
-    #print(i)
     H2O.spline.fits <- smooth.spline(calibration.data.frame$EPOCH_TIME[(breakpoints[i]):(breakpoints[i+1]-1)],
       calibration.data.frame$H2O[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree)
-    #print(i)
+    
     d18O.spline.fits <- smooth.spline(calibration.data.frame$EPOCH_TIME[(breakpoints[i]):(breakpoints[i+1]-1)],
       calibration.data.frame$Delta_18_16[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree)
-    #print(i)
+    
     d2H.spline.fits <- smooth.spline(calibration.data.frame$EPOCH_TIME[(breakpoints[i]):(breakpoints[i+1]-1)],
       calibration.data.frame$Delta_D_H[(breakpoints[i]):(breakpoints[i+1]-1)],df=dfree)
+    
     # extract y value from splines, x value from 1 spline (should all be the same x values!)
     temp1 <- H2O.spline.fits$x
     temp2 <- H2O.spline.fits$y
     temp3 <- d18O.spline.fits$y
     temp4 <- d2H.spline.fits$y
+    
     # make data frame for list element...
     output.spline.fits[[i]] <- data.frame("time"=temp1,"H2O"=temp2,"d18O"=temp3,"d2H"=temp4)
   }
@@ -176,7 +174,6 @@ calculate.spline.derivatives <- function(spline.fits,breaks,dbg.level=0) {
     temp3 <- diff(spline.fits[[i]]$d2H)
     temp4 <- spline.fits[[i]]$time[2:(length(spline.fits[[i]]$time))] # keep time associated with the derivatives...
     temp5 <- (breaks[i]+1):(breaks[i+1]-1)
-    #temp5 <- temp4 # momentary kludge fix for debugging.
     temp6 <- c(NA,diff(temp1))
     temp7 <- c(NA,diff(temp2))
     temp8 <- c(NA,diff(temp3))
@@ -296,6 +293,7 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
   temp15 <- vector("numeric",length(retained.indices)) # d18O rsq
   temp16 <- vector("numeric",length(retained.indices)) # d2H slope
   temp17 <- vector("numeric",length(retained.indices)) # d2H rsq
+  temp18 <- vector("numeric",length(retained.indices))
 
   for (i in 1:length(retained.indices)) {
     if (memory.filter==TRUE) {
@@ -349,7 +347,6 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
         # reëvaluate conds.
         conds <- (abs(Omem.slope) > 0.1 | abs(Hmem.slope) > 0.5) & z < 8
 
-        #print(paste(abs(Omem.slope),abs(Hmem.slope),z))
       }
  
       # set mem.retained.inds for what follows.
@@ -388,6 +385,8 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
       temp16[i] <- 60*coef(Hmod)[[2]]
       temp17[i] <- summary(Hmod)$r.squared
 
+      temp18[i] <- 10*z # percentage of points removed!
+
     } else { # DO NOT remove any memory issues.
       if (lengths(good.inds)[i] > 0 & !all(is.na(good.inds[[i]]))) {
         #print(i) # debug
@@ -421,8 +420,7 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
         temp16[i] <- 60*coef(Hmod)[[2]]
         temp17[i] <- summary(Hmod)$r.squared
 
-       
-
+        temp18[i] <- NA # memory not removed!!!
       } else {
         #print("No inds for this period...")
       } # end check for good inds.
@@ -433,8 +431,8 @@ calculate.standard.averages <- function(calib.data,retained.indices,memory.filte
     "H2O.sd"=temp4,"d18O.sd"=temp5,"d2H.sd"=temp6,
     "time.mean"=temp7,"time.min"=temp8,"time.max"=temp9,
     "H2O.range"=temp10,"d18O.range"=temp11,"d2H.range"=temp12,
-    "ind.count"=temp13,"d18O.trend"=temp14,"d18O.r2trend"=temp15,
-    "d2H.trend"=temp16,"d2H.r2trend"=temp17)
+    "ind.count"=temp13,"d18O.trend"=temp14,"d18O.r2.of.trend"=temp15,
+    "d2H.trend"=temp16,"d2H.r2.of.trend"=temp17,"pct.removed.memory"=temp18)
 
   # kludge fix - remove any rows where all the values are zero? not sure why this 
   # is happening.
@@ -482,9 +480,6 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
   # ambient.time
   amb.time <- ambient.data[c("EPOCH_TIME")]
 
-  # print(head(time.inds))
-  # print(nrow(time.inds))
-
   # loop through rows of time.inds and find the index of
   # nearest point before time.min and the nearest point after time.max
   before.ind <- vector("numeric",nrow(time.inds))
@@ -493,14 +488,14 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
   for (i in 1:nrow(time.inds)) {
       # should be positive for points before calibration point
       tmp1 <- time.inds$time.min[i] - amb.time
-      #print(tmp1)  
+      
       # find minimum positive point, assuming any points are positive
       before.ind[i] <- ifelse(any(tmp1>0), # conditional test
         which(tmp1==min(tmp1[tmp1>0],na.rm=TRUE)), # true branch
         NA) # false branch
       # reverse the logic for the point after calibration
       tmp2 <- amb.time - time.inds$time.max[i]
-      #print(tmp2)
+      
       # first point after calibration using eqn above should be 
       # minimum positive number  
       after.ind[i] <- ifelse(any(tmp2>0), # conditional test
@@ -511,9 +506,6 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
       rm(tmp1)
       rm(tmp2)
   }
-
-  # print(before.ind)
-  # print(after.ind)
 
   # now need to get characteristics of period before/after calibration
   nmin <- 5 # number of ambient minutes to grab before/after calibration
@@ -547,12 +539,6 @@ get.ambient.deltas <- function(calib.averages,ambient.data,dbg.level=0) {
       after.H2O[i] <- after.18O[i] <- after.2H[i] <- NA
     }
   }
-
-  # print some diagnostics
-  # print(before.H2O)
-  # print(after.H2O)
-  # print(before.18O)
-  # print(after.18O)
 
   # make the data output data frame
   output <- data.frame("before.H2O"=before.H2O,"before.d18O"=before.18O,
@@ -642,6 +628,7 @@ apply.drygas.correction <- function(data,do.correction=TRUE,H2O.bg,include.gypsu
       (data$Delta_18_16_mrc[is.na(Delta_18_16_bgc)]*data$H2O.mean[is.na(Delta_18_16_bgc)] -
       data$after.d18O[is.na(Delta_18_16_bgc)]*H2O.bg)/
       (data$H2O.mean[is.na(Delta_18_16_bgc)]-H2O.bg)
+    
     Delta_D_H_bgc[is.na(Delta_D_H_bgc)] <- 
       (data$Delta_D_H_mrc[is.na(Delta_D_H_bgc)]*data$H2O.mean[is.na(Delta_D_H_bgc)] -
       data$after.d2H[is.na(Delta_D_H_bgc)]*H2O.bg)/
@@ -727,10 +714,14 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
   # methods for calibrating:
   # 1 - bracket each ambient period with the standard measurements immediately
   #     before and after ambient period. equally weighted.
+  # 2 - bracket each ambient period with the standard measurements immediately
+  #     before and after ambient period - weighted by inverse of measurement standard error. (NOT CODED)
+  # 3 - larger stencil (NOT CODED)
+  # 4 - Bayesian regression? (NOT CODED)
 
   if (method==1) {
     # ensure that we're working with a data frame...
-    stopifnot(is.data.frame(standard.data.frame))
+    stopifnot(is.data.frame(standard.data.frame)) # is this actually necessary?
 
     # find the number of calibration periods in the data frame.
     #----------------------------------------------------------
@@ -740,6 +731,7 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
     # or by error (e.g., one of the SDM needles develops a clog, and is 
     # not immediately noticed and replaced or is otherwise inaccesible)
     # really - want to do something called run length encoding (rle)
+
     std.names <- as.vector(standard.data.frame$standard.name) # rle requires atomic vector
    
     # check to see if there are any NA values that might interfere with
@@ -775,6 +767,9 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
     period.Hslope <- vector("numeric",nperiods)
     period.Hintercept <- vector("numeric",nperiods)
     period.Hrsq <- vector("numeric",nperiods)
+    period.ID <- vector("numeric",nperiods)
+    start.points <- vector("numeric",nrow(standard.data.frame))
+    end.points <- vector("numeric",nrow(standard.data.frame))
 
     # loop through the periods and estimate the slope.
     for (i in 1:nperiods) {
@@ -809,39 +804,91 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
       period.Hslope[i] <- coef(Hmod)[[2]]
       period.Hintercept[i] <- coef(Hmod)[[1]]
       period.Hrsq[i] <- summary(Hmod)$r.squared
+
+      # set period.id as number of period.
+      period.ID[i] <- i
+
+      # figure out which points correspond to this period in the standard data frame.
+      start.points[start.i:stop.i] <- i
+      end.points[start.iplus1:stop.iplus1] <- i
+
     }
    
+    # structure output into a list of data frames.
+    #--------------------------------------------------
+
+    # 1. uncalibrated standard data
+    calibration.raw.data <- data.frame("standard"=standard.data.frame$standard.name,
+      "time.mean"=standard.data.frame$time.mean,
+      "time.min"=standard.data.frame$time.mean,
+      "time.max"=standard.data.frame$time.min,
+      "ind.count"=standard.data.frame$time.max,
+      "H2O.mean.uncal"=standard.data.frame$H2O.mean,
+      "H2O.stdev.uncal"=standard.data.frame$H2O.sd,
+      "H2O.range.uncal"=standard.data.frame$H2O.range,
+      "d18O.mean.uncal"=standard.data.frame$d18O.mean,
+      "d18O.stdev.uncal"=standard.data.frame$d18O.sd,
+      "d18O.range.uncal"=standard.data.frame$d18O.range,
+      "d2H.mean.uncal"=standard.data.frame$d2H.mean,
+      "d2H.stdev.uncal"=standard.data.frame$d2H.sd,
+      "d2H.range.uncal"=standard.data.frame$d2H.range)
+
+    # 2. ambient vapor data just before and after standard analysis
+    ambient.correction.data <- data.frame("standard"=standard.data.frame$standard.name,
+      "time.mean"=standard.data.frame$time.mean,
+      "before.H2O.mean"=standard.data.frame$before.H2O,
+      "before.d18O.mean.uncal"=standard.data.frame$before.d18O,
+      "before.d2H.mean.uncal"=standard.data.frame$before.d2H,
+      "after.H2O.mean"=standard.data.frame$after.H2O,
+      "after.d18O.mean.uncal"=standard.data.frame$after.d18O,
+      "after.d2H.mean.uncal"=standard.data.frame$after.d2H)
+
+    # 3. diagnostics on the memory correction
+    memory.correction.diagnostics <- data.frame("standard"=standard.data.frame$standard.name,
+      "time.mean"=standard.data.frame$time.mean,
+      "d18O.trend"=standard.data.frame$d18O.trend,
+      "d18O.r2.of.trend"=standard.data.frame$d18O.r2.of.trend,
+      "d2H.trend"=standard.data.frame$d2H.trend,
+      "d2H.r2.of.trend"=standard.data.frame$d2H.r2.of.trend,
+      "pct.removed.memory"=standard.data.frame$pct.removed.memory)
+
+    # 4. calibrated data.
+    calib.stds <- data.frame("standard"=standard.data.frame$standard.name,
+      "time.mean"=standard.data.frame$time.mean,
+      "H2O.mean.uncal"=standard.data.frame$H2O.mean,
+      "d18O.mrc"=standard.data.frame$Delta_18_16_mrc,
+      "d18O.mrcbgc"=standard.data.frame$Delta_18_16_bgc,
+      "d2H.mrc"=standard.data.frame$Delta_D_H_mrc,
+      "d2H.mrcbgc"=standard.data.frame$Delta_D_H_bgc,
+      "starts.period"=start.points,
+      "ends.period"=end.points,
+      "known.std.d18O"=standard.data.frame$standard.O18.VSMOW,
+      "known.std.d2H"=standard.data.frame$standard.H2.VSMOW)
+
+    # 5. regression data
+    regression.data <- data.frame("period.id"=period.ID,
+      "period.start"=period.begin,
+      "period.end"=period.end,
+      "O.slope"=period.Oslope,
+      "O.intercept"=period.Ointercept,
+      "O.r2"=period.Orsq,
+      "H.slope"=period.Hslope,
+      "H.intercept"=period.Hintercept,
+      "H.r2"=period.Hrsq,
+      "qflag"=ifelse(period.Orsq < 0.95 | period.Hrsq < 0.95,0,1))
+
     # create dataframe packaging this info out to return
-    output <- data.frame("start.time"=period.begin,"stop.time"=period.end,
-      "O.slope"=period.Oslope,"O.intercept"=period.Ointercept,"O.r2"=period.Orsq,
-      "H.slope"=period.Hslope,"H.intercept"=period.Hintercept,"H.r2"=period.Hrsq)
+    output <- list("calibration.raw.data"=calibration.raw.data,
+      "ambient.correction.data"=ambient.correction.data,
+      "memory.correction.diagnostics"=memory.correction.diagnostics,
+      "calib.stds"=calib.stds,
+      "regression.data"=regression.data)
 
-    # we should cut out any obviously bad calibrations - with 2 points, this can be any period where
-    # r2 is less than 0.95.
-    bad.Hinds <- which(output$H.r2 < 0.9)
-    bad.Oinds <- which(output$O.r2 < 0.9)
-
-    all.bad.inds <- intersect(bad.Hinds,bad.Oinds)
-    print(paste(bad.Hinds,bad.Oinds,all.bad.inds))
-
-    # fix time array to avoid losing coverage (just assume previous calibration period extends to current one for now...)
-    output$stop.time[(all.bad.inds-1)] <- output$stop.time[all.bad.inds]
-
-    # now remove the bad inds...
-    if (length(all.bad.inds)>0) {
-      output <- output[-all.bad.inds,]
-    }
-    # return the variables.
+    # return the list.
     return(output)
 
-  }
-
-  # print statment denoting the end of this function
-  if (dbg.level>0) {
-    print("ending correct.standards.to.VSMOW function")
-    print("==========================================")
-  }
-}
+  } # end method
+} # end function
 
 #----------------------------------------------------
 # create attach.L2.Header function
