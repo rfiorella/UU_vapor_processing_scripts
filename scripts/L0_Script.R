@@ -99,7 +99,7 @@ for (i in 1:ndays) {
   file.inds.to.include <- pad.file.indices(files.within.day,raw.file.list,dbg.level=debug)
 
   # loop through log files for that particular day and concatenate
-  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list,useParallel=TRUE,dbg.level=debug)
+  daily.data.frame <- concatenate.to.daily(file.inds.to.include,date.to.process,raw.file.list,useParallel=FALSE,dbg.level=debug)
 
   # fix time variables for output - 2 fixes need to be made:
   # (1) there are several redundant time variables. remove extra ones.
