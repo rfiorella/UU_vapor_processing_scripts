@@ -9,6 +9,7 @@ rm(list=ls())
 library(lubridate)
 library(zoo)
 library(RColorBrewer)
+library(ggplot2)
 
 # LOAD ASSOCIATED R CODE
 #==========================================================================
@@ -517,6 +518,69 @@ calib.averages.wamb.mrc.bgc.wstds.filtered <- calib.averages.wamb.mrc.bgc.wstds[
 # calculate the correction slopes/intercepts.
 corrected <- correct.standards.to.VSMOW(calib.averages.wamb.mrc.bgc.wstds.filtered,dbg.level=debug)
 
+# make diagnostic plot showing d18O/d2H vs mixing ratio 
+# for each standard across the month
+
+if (RUN_PLOTS & !is.null(corrected)) {
+    print("Running plot of d18O and d2H vs q for each standard:")
+    print(paste("Standards being used:",unique(corrected$standard.name)))
+
+    # pull out just data frames we're interested -
+    # all columns are in the calib.stds and calibration.raw.data frames
+    plot.data <- cbind(corrected$calibration.raw.data,
+        corrected$calib.stds)
+
+    # initiate looping through standards
+    for (i in 1:length(unique(plot.data$standard))) {
+
+        # break dataset based on standard name value.
+        plot.data.stid <- 
+            plot.data[plot.data$standard==unique(plot.data$standard)[i],]
+            
+        # find limits for this standard for 18O plot...
+        o18.plot.lims <- c(min(
+            min(plot.data.stid$d18O.mean.uncal),
+            min(plot.data.stid$d18O.mrc),
+            min(plot.data.stid$d18O.mrcbgc)),
+            max(
+            max(plot.data.stid$d18O.mean.uncal),
+            max(plot.data.stid$d18O.mrc),
+            max(plot.data.stid$d18O.mrcbgc)))
+
+        # make plot.
+        p <- ggplot(data=plot.data.stid) +
+            geom_point(aes(x=H2O.mean.uncal,y=d18O.mean.uncal),alpha=0.5) +
+            geom_point(aes(x=H2O.mean.uncal,y=d18O.mrc),col="red",alpha=0.5) +
+            geom_point(aes(x=H2O.mean.uncal,y=d18O.mrcbgc),col="blue",alpha=0.5)
+
+        print(p)
+
+        ggsave(paste0(plot.path,"q18O_check_",unique(plot.data$standard)[i],".pdf"))
+        
+        # find limits for this standard for d2H plot...
+        h2.plot.lims <- c(min(
+            min(plot.data.stid$d2H.mean.uncal),
+            min(plot.data.stid$d2H.mrc),
+            min(plot.data.stid$d2H.mrcbgc)),
+            max(
+            max(plot.data.stid$d2H.mean.uncal),
+            max(plot.data.stid$d2H.mrc),
+            max(plot.data.stid$d2H.mrcbgc)))
+
+
+        # make plot.
+        p <- ggplot(data=plot.data.stid) +
+            geom_point(aes(x=H2O.mean.uncal,y=d2H.mean.uncal),alpha=0.5) +
+            geom_point(aes(x=H2O.mean.uncal,y=d2H.mrc),col="red",alpha=0.5) +
+            geom_point(aes(x=H2O.mean.uncal,y=d2H.mrcbgc),col="blue",alpha=0.5)
+
+        print(p)
+
+        ggsave(paste0(plot.path,"q2H_check_",unique(plot.data$standard)[i],".pdf"))
+        
+    }
+}
+
 # make diagnostic plots of the calibration periods.
 if (RUN_PLOTS & !is.null(corrected)) { 
     print("Running diagnostic plot 5...")
@@ -552,7 +616,7 @@ if (RUN_PLOTS & !is.null(corrected)) {
                     corrected$calib.stds$known.std.d18O[inds],
                     xlim=c(min(corrected$calib.stds$d18O.mrcbgc,na.rm=TRUE),
                         max(corrected$calib.stds$d18O.mrcbgc,na.rm=TRUE)),
-                    ylim=c(-20,5), # tuned to WBB values.    
+                    ylim=c(-60,0), # tuned to WBB values.    
                     pch=mypchs[j%%length(mypchs)], # set point style
                     col=mycols[j]) # set color of points.
                 # add regression line.
@@ -589,7 +653,7 @@ if (RUN_PLOTS & !is.null(corrected)) {
                     corrected$calib.stds$known.std.d2H[inds],
                     xlim=c(min(corrected$calib.stds$d2H.mrcbgc,na.rm=TRUE),
                         max(corrected$calib.stds$d2H.mrcbgc,na.rm=TRUE)),
-                    ylim=c(-130,20), # tuned to WBB values.    
+                    ylim=c(-300,20), # tuned to WBB values.    
                     pch=mypchs[j%%length(mypchs)], # set point style
                     col=mycols[j]) # set color of points.
                 # add regression line.
