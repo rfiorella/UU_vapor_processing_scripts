@@ -14,23 +14,23 @@
 
 # 1a. what dates should we process? script works sequentially on dates from startdate to enddate.
 
-start.date <- ymd("2013-12-01")
-end.date <- ymd("2014-04-01")
+start.date <- ymd("2016-12-01")
+end.date <- ymd("2017-05-01")
 
 # 1b. where is the data we're processing? and where should we save output data?
-path.to.L1.data <- "~/VaporData/WBB_VAPOR/L1/v110beta/"
-path.to.output.L2.data <-  "~/VaporData/WBB_VAPOR/L2/v110beta/w1314/"
+path.to.L1.data <- "~/VaporData/SBD_VAPOR/L1/v110beta/"
+path.to.output.L2.data <-  "~/VaporData/SBD_VAPOR/L2/v110beta/"
 
 # 1c. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
-output.file.prefix <- "WBB_Water_Vapor"
+output.file.prefix <- "HDP_Water_Vapor"
 
 # 1d. should we run diagnostic plots? (logical value) and where should they be written?
 RUN_PLOTS <- TRUE
-plot.path <- "~/VaporData/WBB_VAPOR/L2/diag_plots/"
+plot.path <- "~/VaporData/SBD_VAPOR/L2/diag_plots/"
 
 # 1e. Is debugging necessary? This parameter will help determine why code is crashing.
-debug <- 0
+debug <- 2
 
 ###################################################################
 # SECTION 2: Information specific to the analyzer
@@ -40,7 +40,7 @@ debug <- 0
 # delta(@20000ppm) = slope*(1/20000-1/measured.H2O) + measured.delta
 
 # set site...
-site <- "WBB"
+site <- "Snowbird"
 
 if (site=="WBB") {
   fit.type <- "hyperbolic" # allowed values: hyperbolic (1/H2O)

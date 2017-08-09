@@ -6,18 +6,18 @@
 # 1. what dates should we process? script works sequentially on dates from startdate to enddate.
 
 start.date <- ymd("2016-12-01")
-end.date <- ymd("2017-03-01")
+end.date <- ymd("2017-05-01")
 
 # 2. where is the data we're processing? and where should we save output data?
-path.to.L0.data <- "~/VaporData/WBB_VAPOR/L0/testing/"
-path.to.output.L1.data <-  "~/VaporData/WBB_VAPOR/L1/testing/"
+path.to.L0.data <- "~/VaporData/SBD_VAPOR/L0/v1_1_0beta/"
+path.to.output.L1.data <-  "~/VaporData/SBD_VAPOR/L1/v110beta/"
 
 # 3. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
-output.file.prefix <- "WBB_Water_Vapor"
+output.file.prefix <- "HPD_Water_Vapor"
 
 # 4. Is debugging necessary? This parameter will help determine why code is crashing.
-debug <- 1
+debug <- 0
 
 ######################################################################################################################################
 # SET METADATA
@@ -25,4 +25,4 @@ debug <- 1
 # later versions to use this to write out an xml file?
 ######################################################################################################################################
 
-metadata.frame <- read.csv("../metadata_templates/L0_WBB_metadata.csv",header=TRUE)
+#metadata.frame <- read.csv("../metadata_templates/L0_WBB_metadata.csv",header=TRUE)
