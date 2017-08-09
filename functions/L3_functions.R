@@ -87,10 +87,9 @@ reduce.calibrated.ambient.vapor <- function(amb.df,interval.in.minutes) {
     # get endpoints
     eps <- endpoints(dframe,on="minutes",k=interval.in.minutes)
 
-      
     # take mean.
     dframe.reduced <- period.apply(dframe,eps,mean)
-    print("Okay here!")
+    
     # return data
     return(as.data.frame(coredata(dframe.reduced)))
   }
