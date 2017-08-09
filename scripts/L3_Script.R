@@ -38,14 +38,75 @@ raw.file.dates <- extract.date.from.L1.files(raw.file.list,dbg.level=debug)
 # subset list based on 
 subset.list <- raw.file.list[raw.file.dates %within% period]
 
-# GET CALIBRATION FILE - note: this is done differently than in previous steps!!!!!
-calib.data <- read.table(paste(path.to.L2.calib.data,calib.file,sep=""),
-    sep=",",stringsAsFactors=FALSE,header=TRUE)
+#------------------------------------------------------------------------------
+# GET CALIBRATION FILE - note: this is done differently than in previous steps!
+calib.data <- readRDS(paste0(path.to.L2.calib.data,calib.file))
+
+# get choice from user file - how should gaps be filled?
+
+# cut out bad indices.
+calib.data$regression.data <- 
+    calib.data$regression.data[calib.data$regression.data$qflag==1,]
+
+# find 
+if (gap.handling == "last.carried.forward") {
+    for (i in 2:nrow(calib.data$regression.data)) {
+        if (calib.data$regression.data$period.end[i-1] !=
+            calib.data$regression.data$period.start[i]) {
+            # if current period start doesn't equal last period end,
+            # fill gap by changing start of next period to end of last
+            # period.
+            calib.data$regression.data$period.start[i] <- 
+                calib.data$regression.data$period.end[i-1]
+            # print report:
+            print(paste("Changed index:",i))
+        }
+    }
+} else if (gap.handling == "next.carried.backward") {
+    for (i in 2:nrow(calib.data$regression.data)) {
+        if (calib.data$regression.data$period.end[i-1] !=
+            calib.data$regression.data$period.start[i]) {
+            # if current period start doesn't equal last period end,
+            # fill gap by changing start of next period to end of last
+            # period.
+            calib.data$regression.data$period.end[i-1] <- 
+                calib.data$regression.data$period.start[i]
+            # print report:
+            print(paste("Changed index:",i))
+        }
+    }
+} else if (gap.handling == "omit") {
+    # I actually think nothing is needed here...
+}
+
+# get choice from user file - force first regression to beginning of ambient file?
+if (force.to.beginning == TRUE) {
+    print(paste("Changing beginning of first period in regression file to match",
+        "beginning of ambient period. Here's what these values are in UNIX time:"))
+    print(paste(as.POSIXct(start.date,origin="1970-01-01",tz="UTC"),
+        as.POSIXct(calib.data$regression.data$period.start[1],
+        origin="1970-01-01",tz="UTC")))
+    # set first period.start to value of process start time.
+    calib.data$regression.data$period.start[1] <- as.numeric(
+        as.POSIXct(start.date,origin="1970-01-01",tz="UTC"))
+}
+
+# get choice from user file - force last regression to end of ambient file?
+if (force.to.end == TRUE) {
+    print(paste("Changing end of last period in regression file to match",
+        "end of ambient period. Here's what these values are in UNIX time:"))
+    print(paste(as.POSIXct(end.date,origin="1970-01-01",tz="UTC"),
+        as.POSIXct(calib.data$regression.data$period.end[nrow(calib.data$regression.data)],
+        origin="1970-01-01",tz="UTC")))
+    # set first period.start to value of process start time.
+    calib.data$regression.data$period.end[nrow(calib.data$regression.data)] <- 
+        as.numeric(as.POSIXct(end.date,origin="1970-01-01",tz="UTC"))
+}
 
 # initiate log - need to keep track of how much data has been removed.
-log.yyyy <- vector()
-log.mm 	 <- vector()
-log.pct  <- vector()
+# log.yyyy <- vector()
+# log.mm 	 <- vector()
+# log.pct  <- vector()
 
 # SET UP METADATA HEADERS
 # Get metadata from an L1 file in here to pass along to L2 header...
@@ -60,7 +121,9 @@ md.frame <- tmp[grep("#",tmp)] # pull out lines starting with comment character.
 for (j in 1:nmonths) {
 	# print status header.
 	print("==================================================================")
-	print(paste("Processing L3 ambient data for month:",month(start.date %m+% months(j-1)),"/",year(start.date %m+% months(j-1))))
+	print(paste("Processing L3 ambient data for month:",
+        month(start.date %m+% months(j-1)),"/",
+        year(start.date %m+% months(j-1))))
 	print("==================================================================")
 
 	# ensure that the file we're loading matches the month we think we're processing...
@@ -84,20 +147,15 @@ for (j in 1:nmonths) {
         fcount <- fcount+1
     }
 
-    # print some diagnostics
-    # print(head(ambient.data))
-    # print(colnames(calib.data))
-    # print(nrow(calib.data))
-
-    amb.inds.in.calib.row <- vector("list",nrow(calib.data))
+    amb.inds.in.calib.row <- vector("list",nrow(calib.data$regression.data))
 
     # find where in the calibration file we're hoping to analyze
-    for (i in 1:nrow(calib.data)) {
+    for (i in 1:nrow(calib.data$regression.data)) {
         # for this row, does any data in this day fit within this calib period?
-        if (any(ambient.data$EPOCH_TIME > calib.data$start.time[i] & 
-            ambient.data$EPOCH_TIME <= calib.data$stop.time[i])) {
-            amb.inds.in.calib.row[[i]] <- which(ambient.data$EPOCH_TIME > calib.data$start.time[i] & 
-            ambient.data$EPOCH_TIME <= calib.data$stop.time[i])
+        if (any(ambient.data$EPOCH_TIME > calib.data$regression.data$period.start[i] & 
+            ambient.data$EPOCH_TIME <= calib.data$regression.data$period.end[i])) {
+            amb.inds.in.calib.row[[i]] <- which(ambient.data$EPOCH_TIME > calib.data$regression.data$period.start[i] & 
+            ambient.data$EPOCH_TIME <= calib.data$regression.data$period.end[i])
             print(paste(length(amb.inds.in.calib.row[[i]])," inds in calib row:", i))
         } else {
             print(paste("No ambient inds in calib row:",i))
@@ -112,13 +170,13 @@ for (j in 1:nmonths) {
         if (!is.null(amb.inds.in.calib.row[[i]])) { # if there is actually ambient data...
             # calibrate d18O
             Delta_18_16_vsmow[amb.inds.in.calib.row[[i]]] <-
-                calib.data$O.slope[i]*ambient.data$Delta_18_16[amb.inds.in.calib.row[[i]]] + 
-                calib.data$O.intercept[i]
+                calib.data$regression.data$O.slope[i]*ambient.data$Delta_18_16[amb.inds.in.calib.row[[i]]] + 
+                calib.data$regression.data$O.intercept[i]
 
             # calibrate d2H
             Delta_D_H_vsmow[amb.inds.in.calib.row[[i]]] <-
-                calib.data$H.slope[i]*ambient.data$Delta_D_H[amb.inds.in.calib.row[[i]]] + 
-                calib.data$H.intercept[i]
+                calib.data$regression.data$H.slope[i]*ambient.data$Delta_D_H[amb.inds.in.calib.row[[i]]] + 
+                calib.data$regression.data$H.intercept[i]
         }
     }
 
