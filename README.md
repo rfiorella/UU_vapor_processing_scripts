@@ -2,6 +2,8 @@
 
 This repository contains scripts to process raw log file data from a Picarro L2130 analyzer and process them to a common calibrated format. Written by Rich Fiorella (@rfiorella), Gabriel Bowen (@bumbanian), and Galen Gorski. As of version 1.0, these scripts are designed to work on the .dat log files in the Picarro User Directory. We hope to alter these to work on HDF files (either as a transition from .dat files or in addition to), in accordance with the upcoming/anticipated NEON data streams.
 
+[![DOI](https://zenodo.org/badge/82769411.svg)](https://zenodo.org/badge/latestdoi/82769411)
+
 **The location of this repository is likely to change once development settles down! Its final home will likely be in the SPATIAL Lab Group GitHub page**
 
 While this currently works on L2130-i analyzers only, we are interested in broadening this to more analyzer platforms. Please contact Rich (rich.fiorella@utah.edu) if you are interested in discussing this. This document will be updated as the code is updated (and also provides a few hints at current development priorities)
