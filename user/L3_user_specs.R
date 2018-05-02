@@ -43,3 +43,13 @@ force.to.end <- TRUE
 gap.handling <- "last.carried.forward" 	# omit, 
 										# last.carried.forward, 
 										# or next.carried.backward
+
+# import fit data from L2 for humidity dependence of delta.
+fit.type <- "hyperbolic.offset"
+# these parameters have been updated from a humidity cal synthesis
+# across all five samplings throughout time. they differ from the values
+# in the WBB_July17_humidcal regression - hopefully not by too much!!
+Oslope <- -5838.945589
+Ointercept <- 0.308163
+Hslope <- -9726.7185548
+Hintercept <- 0.4081879

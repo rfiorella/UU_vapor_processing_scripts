@@ -147,6 +147,10 @@ for (j in 1:nmonths) {
         fcount <- fcount+1
     }
 
+    # apply humidity calibration.
+    ambient.data <- remove.humidity.dependence(ambient.data)
+
+    # create list of indices.
     amb.inds.in.calib.row <- vector("list",nrow(calib.data$regression.data))
 
     # find where in the calibration file we're hoping to analyze

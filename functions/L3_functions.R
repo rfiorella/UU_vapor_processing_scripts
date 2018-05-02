@@ -96,3 +96,45 @@ reduce.calibrated.ambient.vapor <- function(amb.df,interval.in.minutes) {
 }
 
 
+#-----------------------------------------------------------------------------------
+# apply.mixingratio.correction - this function corrects the measured isotopic compositions
+# using a linear regression between delta and 1/[H2O] - based on coefficients determined from
+# CalibrationStudyRegressionHandClean_gjb. Requires mixing ratio coefficients to be specified 
+# in L1_Calibration_Parameters.R. Other regressions are possible for correcting for
+# concentration dependence, but have not be implemented in this code base yet.
+
+remove.humidity.dependence <- function(data.frame,fit.type,Oslope,Hslope,dbg.level=0) {
+  # print statement indicating that this function is starting
+  if (dbg.level>0) {
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    print("starting apply.mixingratio.correction.calibration function")
+  }
+
+  #======================================================
+  # start work of function
+
+  print(paste(now()," Applying mixing ratio correction to: ",deparse(substitute(data.frame))))
+
+  if (fit.type=="hyperbolic.offset") {
+    # save a copy of uncorrected variables.
+    data.frame$Delta_18_16_nocorr <- data.frame$Delta_18_16
+    data.frame$Delta_D_H_nocorr <- data.frame$Delta_D_H
+    # calculate offsets
+    O_offset <- Ointercept + Oslope/data.frame$H2O
+    H_offset <- Hintercept + Hslope/data.frame$H2O
+    # subtract offsets from measurements
+    data.frame$Delta_18_16 <- data.frame$Delta_18_16_nocorr - O_offset
+    data.frame$Delta_D_H <- data.frame$Delta_D_H_nocorr - H_offset
+  }
+
+  # print statment denoting the end of this function
+  if (dbg.level>0) {
+    print("ending apply.mixingratio.correction.calibration function")
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+  }
+
+  # return the whole data frame with the two mixing ratio corrected variables attached.
+  return(data.frame)
+}
+
+#------------------------------------------------------------
