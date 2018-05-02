@@ -53,3 +53,10 @@ Oslope <- -5838.945589
 Ointercept <- 0.308163
 Hslope <- -9726.7185548
 Hintercept <- 0.4081879
+
+#------------------------------------------------------------
+#------------------------------------------------------------
+# Get humidity calibration sigmas file name- this should be a file that 
+# lists sigma values as a function of humidity.
+
+humidcal.filename <- "~/Dropbox/VaporData/HumidityCalibrations/UOU_humidity_uncertainties_2may18.csv"

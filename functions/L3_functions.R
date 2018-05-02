@@ -138,3 +138,20 @@ remove.humidity.dependence <- function(data.frame,fit.type,Oslope,Hslope,dbg.lev
 }
 
 #------------------------------------------------------------
+attach.humidcal.sigmas <- function(data.frame,calibration.sigmas) {
+    # calibration sigmas should be a stand-in for the filename that contains
+    # a list of H2O values, Osigma, Hsigma, and d-excess sigma.
+    # so read that in here...
+    sigmas <- read.table(calibration.sigmas,sep=",",header=TRUE,stringsAsFactors=FALSE)
+
+    # for each row in data frame, find the row in calibraiton sigmas with the closest
+    # H2O value.
+    inds <- sapply(data.frame$H2O,function(x){which.min(abs(x-sigmas$H2O))})
+
+    data.frame$Osigma <- sigmas$Osigma[inds]
+    data.frame$Hsigma <- sigmas$Hsigma[inds]
+    data.frame$dsigma <- sigmas$dsigma[inds]
+
+    # return data frame with these three new variables
+    return(data.frame)
+}

@@ -208,6 +208,8 @@ for (j in 1:nmonths) {
     # dev.off()
     # Save L3 file
 
+    # add uncertainty to the data based on the humidity calibration
+    ambient.data <- attach.humidcal.sigmas(ambient.data,humidcal.filename)
 
 
     print(paste("Saving calibrated ambient data"))
