@@ -583,7 +583,14 @@ apply.mixingratio.correction <- function(avg.data.frame,fit.type,Oslope,Hslope,d
       avg.data.frame$d18O.mean
     Delta_D_H_mrc <- Hslope*(log(1/20000,base=10)-log(1/avg.data.frame$H2O.mean,base=10)) +
       avg.data.frame$d2H.mean
-    }
+  } else if (fit.type=="hyperbolic.offset") {
+    # calculate offsets
+    O_offset <- Ointercept + Oslope/avg.data.frame$H2O.mean
+    H_offset <- Hintercept + Hslope/avg.data.frame$H2O.mean
+    # subtract offsets from measurements
+    Delta_18_16_mrc <- avg.data.frame$d18O.mean - O_offset
+    Delta_D_H_mrc <- avg.data.frame$d2H.mean - H_offset
+  }
 
   # attach new mrc variables to original data frame.
   avg.data.frame <- cbind(avg.data.frame,Delta_18_16_mrc)
@@ -880,7 +887,7 @@ correct.standards.to.VSMOW <- function(standard.data.frame,method=1,dbg.level=0)
       "H.slope"=period.Hslope,
       "H.intercept"=period.Hintercept,
       "H.r2"=period.Hrsq,
-      "qflag"=ifelse(period.Orsq < 0.95 | period.Hrsq < 0.95,0,1))
+      "qflag"=ifelse(period.Orsq < 0.99 | period.Hrsq < 0.99,0,1))
 
     # create dataframe packaging this info out to return
     output <- list("calibration.raw.data"=calibration.raw.data,

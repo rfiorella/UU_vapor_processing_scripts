@@ -123,8 +123,9 @@ for (i in 1:nmonths) {
 
     # split the file name to extract the date
     tmp <- strsplit(subset.list[[fcount]],split="_")
-    file.month <- month(tmp[[1]][7]) # index 7 of resulting list has the date info with current directory structure
-    file.year <- year(tmp[[1]][7])   # index 7 of resulting list has the date info with current directory structure
+    # i don't know why this works - the string remaining is more than a date!!!
+    file.month <- month(tmp[[1]][6]) # index 7 of resulting list has the date info with current directory structure
+    file.year <- year(tmp[[1]][6])   # index 7 of resulting list has the date info with current directory structure
 
     # logical test - does the mm/yy of the file match our expectations?
     if (desired.month != file.month | desired.year != file.year) {
@@ -219,8 +220,8 @@ for (i in 1:nmonths) {
     # load relevant ambient data file
     #---------------------------------
     tmp <- strsplit(amb.subset[[gcount]],split="_")
-    file.month <- month(tmp[[1]][7])
-    file.year <- year(tmp[[1]][7])
+    file.month <- month(tmp[[1]][6])
+    file.year <- year(tmp[[1]][6])
 
     #print(paste(desired.month,desired.year,file.month,file.year))
 
@@ -232,8 +233,8 @@ for (i in 1:nmonths) {
         gcount <- gcount + 1
         # reset file.month, file.year based on new gcount.
         tmp <- strsplit(amb.subset[[gcount]],split="_")
-        file.month <- month(tmp[[1]][7])
-        file.year <- year(tmp[[1]][7])
+        file.month <- month(tmp[[1]][6])
+        file.year <- year(tmp[[1]][6])
     } 
 
         print("Found the file where month/year matches expected month/year")

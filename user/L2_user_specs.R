@@ -15,19 +15,19 @@
 # 1a. what dates should we process? script works sequentially on dates from startdate to enddate.
 
 start.date <- ymd("2016-12-01")
-end.date <- ymd("2017-05-01")
+end.date <- ymd("2017-03-01")
 
 # 1b. where is the data we're processing? and where should we save output data?
-path.to.L1.data <- "~/VaporData/SBD_VAPOR/L1/v110beta/"
-path.to.output.L2.data <-  "~/VaporData/SBD_VAPOR/L2/v110beta/"
+path.to.L1.data <- "~/Dropbox/SLVhistoricalCDV/data/wateriso/L1/"
+path.to.output.L2.data <-  "~/Dropbox/SLVhistoricalCDV/data/wateriso/L2/"
 
 # 1c. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
-output.file.prefix <- "HDP_Water_Vapor"
+output.file.prefix <- "WBB_Water_Vapor"
 
 # 1d. should we run diagnostic plots? (logical value) and where should they be written?
 RUN_PLOTS <- TRUE
-plot.path <- "~/VaporData/SBD_VAPOR/L2/diag_plots/"
+plot.path <- "~/Dropbox/SLVhistoricalCDV/scripts/UU_Vapor_processing_scripts-1.1.0/plots/"
 
 # 1e. Is debugging necessary? This parameter will help determine why code is crashing.
 debug <- 2
@@ -40,12 +40,24 @@ debug <- 2
 # delta(@20000ppm) = slope*(1/20000-1/measured.H2O) + measured.delta
 
 # set site...
-site <- "Snowbird"
+site <- "WBB"
+
+# allowed values for fit.type, and what other variables are expected with
+# each type:
+# a) hyberbolic, requires: Oslope,Hslope
+# b) logarithmic, requires: Oslope,Hslope
+# c) hyberbolic.offset, requires: Oslope, Hslope, Ointercept, Hintercept
+# note: c treats the dependence on humidity as an offset parameter that is
+# to subtracted from measured values - underlying function calculates offset
+# based on eqn and then subtracts from analyzer measured value.
 
 if (site=="WBB") {
-  fit.type <- "hyperbolic" # allowed values: hyperbolic (1/H2O)
-  Oslope <- -3.618*10^3
-  Hslope <- -1.656*10^4
+  fit.type <- "hyperbolic.offset"
+  # these parameters come from the WBB_july17_humidcal folder, up two folder levels.
+  Oslope <- -2456.09
+  Ointercept <- 0.13337
+  Hslope <- -1635.49
+  Hintercept <- 0.1463
 } else if (site=="Snowbird") {
   fit.type <- "logarithmic" # allowed values: hyberbolic (1/H2O)
   Oslope <- 2.59226
@@ -63,29 +75,38 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
     # corrected concentrations.
     # first, break into subsets based on compositions
 
-    std.switch <- as.numeric(as.POSIXct("2013-11-15",tz="GMT",origin="1970-01-01"))
+    # modified 16sep17 to account for accidental change back to PZ in February 2017.
+    # switch was done after attempted humidity calibration on 2016-02-21.
+    # the light standard - UD - I think remained unchanged.
+    std.switch1 <- as.numeric(as.POSIXct("2017-02-16",tz="GMT",origin="1970-01-01"))
+    std.switch2 <- as.numeric(as.POSIXct("2017-02-21",tz="GMT",origin="1970-01-01"))
 
-    UD.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean < std.switch)
-    PZ.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean < std.switch)
-    UT.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean > std.switch)
-    FL.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean > std.switch)
+    UD2.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean > std.switch2)
+    PZ.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean > std.switch2)
+    UD1.stds <- which(data$Delta_18_16_bgc < O18.break & data$time.mean < std.switch1)
+    FL.stds <- which(data$Delta_18_16_bgc >= O18.break & data$time.mean < std.switch1)
 
     # assign standard name/values
     PZ.standard <- "PZ"
     PZ.standard.OValue <- 1.65
     PZ.standard.DValue <- 16.9
 
-    UD.standard <- "UD"
-    UD.standard.OValue <- -16.52
-    UD.standard.DValue <- -123.1
+    # UD.standard <- "UD"
+    # UD.standard.OValue <- -16.52
+    # UD.standard.DValue <- -123.1
 
-    UT.standard <- "UT"
-    UT.standard.OValue <- -16.0
-    UT.standard.DValue <- -121.0
+    UD1.standard <- "UT"
+    UD1.standard.OValue <- -16.0
+    UD1.standard.DValue <- -121.0
 
     FL.standard <- "FL"
     FL.standard.OValue <- -1.23
     FL.standard.DValue <- -5.51
+
+    # added second version of UT di water. 
+    UD2.standard <- "UTD2"
+    UD2.standard.OValue <- -15.88
+    UD2.standard.DValue <- -119.66
 
     # fit standard values into the vectors corresponding to proper indices in standard.data.frame
     add.names <- vector(length=nrow(data))
@@ -93,10 +114,10 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
     add.std.Dval <- vector(length=nrow(data))
 
     # if data for the standard exists, loop through and assign it to these rows.
-    if (!is.null(UD.stds) & length(UD.stds)>0) {
-      add.names[UD.stds] <- rep(UD.standard,length(UD.stds))
-      add.std.Oval[UD.stds] <- rep(UD.standard.OValue,length(UD.stds))
-      add.std.Dval[UD.stds] <- rep(UD.standard.DValue,length(UD.stds))
+    if (!is.null(UD2.stds) & length(UD2.stds)>0) {
+      add.names[UD2.stds] <- rep(UD2.standard,length(UD2.stds))
+      add.std.Oval[UD2.stds] <- rep(UD2.standard.OValue,length(UD2.stds))
+      add.std.Dval[UD2.stds] <- rep(UD2.standard.DValue,length(UD2.stds))
     }
 
     if (!is.null(PZ.stds) & length(PZ.stds)>0) {
@@ -105,10 +126,10 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
       add.std.Dval[PZ.stds] <- rep(PZ.standard.DValue,length(PZ.stds))
     }
 
-    if (!is.null(UT.stds) & length(UT.stds)>0) {
-      add.names[UT.stds] <- rep(UT.standard,length(UT.stds))
-      add.std.Oval[UT.stds] <- rep(UT.standard.OValue,length(UT.stds))
-      add.std.Dval[UT.stds] <- rep(UT.standard.DValue,length(UT.stds))
+    if (!is.null(UD1.stds) & length(UD1.stds)>0) {
+      add.names[UD1.stds] <- rep(UD1.standard,length(UD1.stds))
+      add.std.Oval[UD1.stds] <- rep(UD1.standard.OValue,length(UD1.stds))
+      add.std.Dval[UD1.stds] <- rep(UD1.standard.DValue,length(UD1.stds))
     }
 
     if (!is.null(FL.stds) & length(FL.stds)>0) {
@@ -244,7 +265,7 @@ include.gypsum.fractionation <- FALSE
 # this section seeks to define additional parameters/checks on what
 # constitutes an acceptible standard analysis.
 
-h2o.max.thres <- 30000    # maximum mean H2O concentration allowed
+h2o.max.thres <- 35000    # maximum mean H2O concentration allowed
 h2o.min.thres <- 2000     # minimum mean H2O concentration allowed
 h2o.sdev.thres <- 1000    # maximum standard deviation for H2O allowed
 d18O.sdev.thres <- 1      # maximum standard deviation for d18O allowed
