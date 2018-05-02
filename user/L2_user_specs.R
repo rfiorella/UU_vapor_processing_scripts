@@ -27,7 +27,7 @@ output.file.prefix <- "WBB_Water_Vapor"
 
 # 1d. should we run diagnostic plots? (logical value) and where should they be written?
 RUN_PLOTS <- TRUE
-plot.path <- "~/Dropbox/SLVhistoricalCDV/scripts/UU_Vapor_processing_scripts-1.1.0/plots/"
+plot.path <- "~/Dropbox/SLVhistoricalCDV/scripts/UU_Vapor_processing_scripts-1.2.0/plots/"
 
 # 1e. Is debugging necessary? This parameter will help determine why code is crashing.
 debug <- 2
@@ -53,11 +53,13 @@ site <- "WBB"
 
 if (site=="WBB") {
   fit.type <- "hyperbolic.offset"
-  # these parameters come from the WBB_july17_humidcal folder, up two folder levels.
-  Oslope <- -2456.09
-  Ointercept <- 0.13337
-  Hslope <- -1635.49
-  Hintercept <- 0.1463
+  # these parameters have been updated from a humidity cal synthesis
+  # across all five samplings throughout time. they differ from the values
+  # in the WBB_July17_humidcal regression - hopefully not by too much!!
+  Oslope <- -5838.945589
+  Ointercept <- 0.308163
+  Hslope <- -9726.7185548
+  Hintercept <- 0.4081879
 } else if (site=="Snowbird") {
   fit.type <- "logarithmic" # allowed values: hyberbolic (1/H2O)
   Oslope <- 2.59226
@@ -78,6 +80,9 @@ assign.standard.names.and.values <- function(data,O18.break=-8.0,D.break=-50.0) 
     # modified 16sep17 to account for accidental change back to PZ in February 2017.
     # switch was done after attempted humidity calibration on 2016-02-21.
     # the light standard - UD - I think remained unchanged.
+
+    #RPF note for ACPD MS - there was an additional standard switch mentioned in Gorski et. al.
+    #perhaps this was before Dec13?
     std.switch1 <- as.numeric(as.POSIXct("2017-02-16",tz="GMT",origin="1970-01-01"))
     std.switch2 <- as.numeric(as.POSIXct("2017-02-21",tz="GMT",origin="1970-01-01"))
 
