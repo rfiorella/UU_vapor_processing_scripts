@@ -9,6 +9,7 @@
 internal*
 data_sync/
 humidity calibrations/
+reports/
 
 # ignore diagnostic plots
 scripts/diag_plots/
