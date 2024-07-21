@@ -157,8 +157,10 @@ concatenate.to.daily.uncompiled <- function(indices,date,file.list,useParallel=F
 			print("concatenating in serial")
 		}
 		# begin concatenating in serial
+	  print(file.list[indices[1]])
 		output <- read.table(file.list[indices[1]],header=TRUE,stringsAsFactors=FALSE,fill=TRUE)
 		for (i in (2:length(indices))) {
+		  print(i)
 			temp <- read.table(file.list[indices[i]],header=TRUE,stringsAsFactors=FALSE,fill=TRUE)
 			# add to data frame
 			output <- rbind(output,temp)

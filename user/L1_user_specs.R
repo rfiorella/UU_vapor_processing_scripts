@@ -5,16 +5,16 @@
 
 # 1. what dates should we process? script works sequentially on dates from startdate to enddate.
 
-start.date <- ymd("2016-12-01")
-end.date <- ymd("2017-05-01")
+start.date <- ymd("2019-01-01")
+end.date <- ymd("2020-01-01")
 
 # 2. where is the data we're processing? and where should we save output data?
-path.to.L0.data <- "~/VaporData/SBD_VAPOR/L0/v1_1_0beta/"
-path.to.output.L1.data <-  "~/VaporData/SBD_VAPOR/L1/v110beta/"
+path.to.L0.data <- "~/Dropbox/VaporData/WBB_VAPOR/L0/v1_2_0/"
+path.to.output.L1.data <-  "~/Dropbox/VaporData/WBB_VAPOR/L1/v120/"
 
 # 3. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
-output.file.prefix <- "HPD_Water_Vapor"
+output.file.prefix <- "WBB_Water_Vapor"
 
 # 4. Is debugging necessary? This parameter will help determine why code is crashing.
 debug <- 0

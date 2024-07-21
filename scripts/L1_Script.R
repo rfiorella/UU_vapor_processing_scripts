@@ -22,7 +22,7 @@ source("../functions/L1_functions.R")
 source("../user/L1_user_specs.R")
 
 # profile code.
-Rprof("L1_v1_0_0test")
+#Rprof("L1_v1_0_0test")
 ##########################################################################
 # LOAD DAILY DATA, CONCATENATE TO MONTHLY, THEN SEPARATE INTO 
 # CALIBRATION AND AMBIENT MEASUREMENT PERIODS
@@ -248,7 +248,7 @@ for (i in 1:nmonths) {
  	rm(tmp) # remove prior temporary placeholder
  }
 
-Rprof(NULL)
-log.fname <- paste("L1_log_v110beta",".dat",sep="")
-log.output <- data.frame(log.yyyy,log.mm,log.pctc,log.pcta,log.nptsc,log.nptsa,log.timec,log.timea)
-write.table(log.output,file=log.fname,sep=",")
+#Rprof(NULL)
+#log.fname <- paste("L1_log_v110beta",".dat",sep="")
+#log.output <- data.frame(log.yyyy,log.mm,log.pctc,log.pcta,log.nptsc,log.nptsa,log.timec,log.timea)
+#write.table(log.output,file=log.fname,sep=",")

@@ -5,17 +5,17 @@
 
 # 1. what dates should we process? script works sequentially on dates from startdate to enddate.
 
-startdate <- "2016-12-08" #expects a number in yyyymmdd format - will begin at MIDNIGHT GMT.
-enddate   <- "2017-05-01" #expects a number in yyyymmdd format - will end at MIDNIGHT GMT.
+startdate <- "2019-01-01" #expects a number in yyyymmdd format - will begin at MIDNIGHT GMT.
+enddate   <- "2020-01-01" #expects a number in yyyymmdd format - will end at MIDNIGHT GMT.
 
 # 2. where is the data we're processing? and where should we save output data?
 # don't forget trailing slash!
-path.to.data <- "~/VaporData/SBD_VAPOR/Raw/"
-path.to.output.L0.data <- "~/VaporData/SBD_VAPOR/L0/v1_1_0beta/"
+path.to.data <- "~/Dropbox/VaporData/WBB_VAPOR/Raw/2019/"
+path.to.output.L0.data <- "~/Dropbox/VaporData/WBB_VAPOR/L0/v1_2_0/"
 
 # 3. what do we call the output data? file name will have the format of:
 # (path.to.output.L0.data)/(output.file.prefix)_Calib/AmbientData_L0_YYYY-mm-dd_(codeversion).dat
-output.file.prefix <- "HDP_Water_Vapor"
+output.file.prefix <- "WBB_Water_Vapor"
 
 # 4. This step takes averages some of the ambient data from its native 1.16 Hz time resolution.
 # these parameters specify: (a) how long should each averaging period be (in minutes)?
@@ -37,4 +37,4 @@ debug <- 2 # set to 0 for no diag output, >0 for increased diagnostic levels for
 # later versions to use this to write out an xml file?
 ######################################################################################################################################
 
-metadata.frame <- read.csv("../internal_metadata/L0_Snowbird_metadata.csv",header=TRUE)
+metadata.frame <- read.csv("../internal_metadata/L0_WBB_metadata.csv",header=TRUE)

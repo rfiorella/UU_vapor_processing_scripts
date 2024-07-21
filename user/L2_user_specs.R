@@ -14,11 +14,11 @@
 
 # 1a. what dates should we process? script works sequentially on dates from startdate to enddate.
 
-start.date <- ymd("2016-12-01")
-end.date <- ymd("2017-03-01")
+start.date <- ymd("2019-01-01")
+end.date <- ymd("2020-01-01")
 
 # 1b. where is the data we're processing? and where should we save output data?
-path.to.L1.data <- "~/Dropbox/SLVhistoricalCDV/data/wateriso/L1/"
+path.to.L1.data <- "~/Dropbox/VaporData/WBB_VAPOR/L1/"
 path.to.output.L2.data <-  "~/Dropbox/SLVhistoricalCDV/data/wateriso/L2/"
 
 # 1c. what do we call the output data? file name will have the format of:
